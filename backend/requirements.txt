@@ -1,0 +1,29 @@
+# Hostel Management Multi-Agent System — Backend Dependencies
+# Phase 0 (core scaffold)
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-dotenv==1.0.1
+supabase==2.7.4
+psycopg2-binary==2.9.9
+pgvector==0.3.2
+pydantic==2.8.2
+slowapi==0.1.9          # rate limiting for face recognition endpoint
+
+# Phase 1 (IRIS — Vision Agent)  — install when ready
+# onnxruntime==1.19.2
+# opencv-python==4.10.0.84
+# numpy==1.26.4
+# Pillow==10.4.0
+# insightface==0.7.3
+
+# Phase 2 (SENTINEL — Attendance Agent)
+# apscheduler==3.10.4
+
+# Phase 3B (NOURISH — Gemini menu parser)
+# google-generativeai==0.7.2
+
+# Phase 3C + 4 + 5 (NOURISH NLP + FIXR + HERALD — Groq)
+# groq==0.9.0
+
+# Phase 6 (Auth — JWT verification)
+# python-jose[cryptography]==3.3.0
