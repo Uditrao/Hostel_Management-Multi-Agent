@@ -137,11 +137,12 @@ CREATE TABLE IF NOT EXISTS anomaly_flags (
     type             TEXT NOT NULL CHECK (type IN ('attendance_missed', 'mess_missed_streak', 'unresolved_complaint')),
     detail           TEXT NOT NULL,
     created_at       TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    seen_by_warden   BOOLEAN NOT NULL DEFAULT FALSE,
-
-    -- Prevent the same flag type being raised twice for the same student on the same day
-    UNIQUE (student_id, type, DATE(created_at AT TIME ZONE 'Asia/Kolkata'))
+    seen_by_warden   BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+-- Prevent the same flag type being raised twice for the same student on the same day
+CREATE UNIQUE INDEX IF NOT EXISTS anomaly_flags_student_type_day_uniq
+    ON anomaly_flags (student_id, type, DATE(created_at AT TIME ZONE 'Asia/Kolkata'));
 
 -- ─────────────────────────────────────────────────────────────
 -- ROW LEVEL SECURITY (basic — to be tightened in Phase 6)
