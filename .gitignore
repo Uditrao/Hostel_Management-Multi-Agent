@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment / secrets
+.env
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (local dev)
+uploads/
+
+# Model files (large — download separately)
+*.onnx
+*.bin
+*.pt
+models/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
