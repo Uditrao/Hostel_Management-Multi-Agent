@@ -61,14 +61,14 @@ async def health():
 
 
 # ─── Routers (uncomment as each Phase is completed) ───────────────────────────
-# from agents.iris.router      import router as iris_router
+from agents.iris.router      import router as iris_router
 # from agents.sentinel.router  import router as sentinel_router
 # from agents.nourish.router   import router as nourish_router
 # from agents.fixr.router      import router as fixr_router
 # from agents.herald.router    import router as herald_router
 # from auth.router             import router as auth_router
 
-# app.include_router(iris_router,      prefix="/iris",     tags=["IRIS — Vision"])
+app.include_router(iris_router,      prefix="/iris",     tags=["IRIS — Vision"])
 # app.include_router(sentinel_router,  prefix="/sentinel", tags=["SENTINEL — Attendance"])
 # app.include_router(nourish_router,   prefix="/nourish",  tags=["NOURISH — Mess"])
 # app.include_router(fixr_router,      prefix="/fixr",     tags=["FIXR — Maintenance"])

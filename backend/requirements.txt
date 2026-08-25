@@ -1,6 +1,7 @@
 # Hostel Management Multi-Agent System — Backend Dependencies
 # Phase 0 (core scaffold)
 fastapi==0.115.0
+python-multipart==0.0.9  # required by FastAPI for Form() + File() upload endpoints
 uvicorn[standard]==0.30.6
 python-dotenv==1.0.1
 supabase==2.7.4
@@ -9,12 +10,14 @@ pgvector==0.3.2
 pydantic==2.8.2
 slowapi==0.1.9          # rate limiting for face recognition endpoint
 
-# Phase 1 (IRIS — Vision Agent)  — install when ready
-# onnxruntime==1.19.2
-# opencv-python==4.10.0.84
-# numpy==1.26.4
-# Pillow==10.4.0
-# insightface==0.7.3
+# Phase 1 (IRIS — Vision Agent)
+# switched from insightface→deepface (insightface needs Visual C++ on Windows)
+onnxruntime         # ONNX runtime (also used by deepface internally)
+opencv-python==4.10.0.84
+numpy==1.26.4
+Pillow==10.4.0
+deepface            # face recognition — no C++ compile needed, works on Windows
+tf-keras            # deepface backend
 
 # Phase 2 (SENTINEL — Attendance Agent)
 # apscheduler==3.10.4
