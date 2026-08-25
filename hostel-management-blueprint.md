@@ -6,13 +6,13 @@ A hostel management system built as a **multi-agent architecture**, where each a
 
 ### Agents in the system
 
-| Agent | Type | Responsibility |
-|---|---|---|
-| Vision Agent | CV model (MobileFaceNet) | Face enrollment + recognition for gate attendance & mess entry |
-| Attendance Agent | Rule-based | Marks attendance from Vision Agent events, enforces time window |
-| Mess Agent | Rule-based + LLM (Gemini for menu PDF, Groq for staff NLP commands) | Validates mess entry, tracks consumption, forecasts inventory, parses menu PDFs, handles staff NLP commands |
-| Maintenance Agent | LLM-based (Groq, structured output) | Classifies complaints (category + urgency), pushes structured ticket to Warden portal |
-| Orchestrator Agent | Rule-based (+ optional LLM summarizer) | Cross-checks attendance/complaints/mess data, flags anomalies, notifies Warden |
+| Codename | Agent | Type | Responsibility |
+|---|---|---|---|
+| **IRIS** 👁️ | Vision Agent | DeepFace / Facenet512 | Face enrollment + recognition for gate attendance & mess entry |
+| **SENTINEL** 🛡️ | Attendance Agent | Rule-based | Marks attendance from IRIS events, enforces time window |
+| **NOURISH** 🍽️ | Mess Agent | Rule-based + LLM (Gemini for menu PDF, Groq for NLP) | Validates mess entry, tracks consumption, forecasts inventory, parses menu PDFs, handles staff NLP commands |
+| **FIXR** 🔧 | Maintenance Agent | LLM-based (Groq, structured output) | Classifies complaints (category + urgency), pushes structured ticket to Warden portal |
+| **HERALD** 🔍 | Orchestrator Agent | Rule-based (+ optional LLM summarizer) | Cross-checks attendance/complaints/mess data, flags anomalies, notifies Warden |
 
 ---
 
@@ -20,7 +20,7 @@ A hostel management system built as a **multi-agent architecture**, where each a
 
 | Layer | Choice | Why |
 |---|---|---|
-| Face Recognition | **MobileFaceNet** (via `insightface` model zoo or standalone ONNX) run with `onnxruntime` | Very lightweight (~4-5MB), fast on CPU, deployable even on free-tier hosts. At 10-20 enrolled students, accuracy is effectively as good as heavier models like ArcFace — gallery size is small enough that embedding separation isn't an issue. Focus effort on good enrollment photo quality (lighting, front-facing, 3-5 frames) instead of model size. |
+| Face Recognition | **Facenet512** via `deepface` library, `onnxruntime` for ONNX ops | **Why the switch from MobileFaceNet/insightface:** `insightface` requires Microsoft Visual C++ Build Tools to compile Cython extensions on Windows — not viable without a full VS install. `deepface` with Facenet512 installs with plain `pip` on any platform, produces 512-d L2-normalised embeddings, and achieves comparable accuracy. Model weights (~90MB) download automatically on first use to `~/.deepface/weights/`. At 10-20 enrolled students the gallery is small enough that any quality model gives near-perfect separation. |
 | Backend | **FastAPI (Python)** | Async support (needed for camera streams + LLM calls), easy to structure as separate agent modules/routers |
 | Database | **PostgreSQL with `pgvector` extension**, hosted on **Supabase** | Native vector similarity search for face embeddings (`ORDER BY embedding <-> query_vector`), plus normal relational tables in one place |
 | File/Image Storage | **Supabase Storage** (or local `/uploads` during dev) | Stores enrollment photos, flagged "unknown person" captures. Only URLs go in DB. |
@@ -51,7 +51,7 @@ students (
   name TEXT,
   room_no TEXT,
   photo_url TEXT,
-  face_embedding VECTOR(128),   -- pgvector; set dim to match your MobileFaceNet ONNX build (commonly 128 or 256)
+  face_embedding VECTOR(512),   -- pgvector; 512-d to match Facenet512 output (updated via schema_alter_v2.sql)
   enrolled_at TIMESTAMP
 )
 
@@ -169,10 +169,14 @@ All three portals sit behind Supabase Auth (email/password is enough for a colle
 
 ## 5. Agent Logic — How Each One Actually Works
 
-### 5.1 Vision Agent
-1. Enrollment: capture 3–5 face frames → MobileFaceNet generates embeddings → average/store as one vector per student. (Confirm embedding dimension from the specific ONNX build you use — commonly 128 or 256-d for MobileFaceNet, vs 512-d for ArcFace — and set the `pgvector` column size to match.)
-2. Recognition: incoming frame → generate embedding → `pgvector` cosine similarity search against all stored embeddings → best match above threshold (tune during testing with your actual enrolled set — start around 0.5-0.6 cosine similarity and adjust based on false accept/reject rate you observe) = match; below = "unknown."
-3. Emits a structured event: `{student_id or null, timestamp, location: 'gate'|'mess'}` to the relevant agent (Attendance or Mess).
+### 5.1 IRIS — Vision Agent
+**Library**: `deepface` (Facenet512 model) + `opencv-python` (frame capture & detection backend)
+
+1. **Enrollment**: capture 3–5 webcam frames OR accept a single uploaded image → Facenet512 generates 512-d embeddings per frame → average all frames + re-normalise → upsert one `VECTOR(512)` into `students.face_embedding`.
+2. **Recognition**: incoming frame → Facenet512 embedding → `match_face` Postgres RPC (pgvector cosine distance `<=>`) → best match below distance threshold = identified student; above threshold = "unknown".
+   - Threshold: `FACE_SIMILARITY_THRESHOLD=0.55` (cosine similarity) set in `.env`; tune up/down based on false accept/reject rate observed on your enrolled set.
+   - First call per server restart takes ~15s while TensorFlow and model weights load; subsequent calls are fast.
+3. Emits a structured identity event: `{recognized, student_id, student_name, roll_no, confidence, location: 'gate'|'mess'}` forwarded to SENTINEL or NOURISH.
 
 ### 5.2 Attendance Agent
 - Listens for `location: 'gate'` events during the active `attendance_window`.
@@ -205,48 +209,72 @@ All three portals sit behind Supabase Auth (email/password is enough for a colle
 ## 6. Honesty Note for Your Report/Viva
 
 Be upfront about what's genuinely ML/AI vs rule-based, since a good teacher will ask:
-- **Real ML/AI**: face recognition (MobileFaceNet — an embedding-based deep learning model, lightweight but genuinely a trained neural network, not a heuristic), complaint classification (LLM reasoning), menu PDF structuring (LLM), NLP inventory commands (LLM function-calling)
-- **Rule-based (not ML)**: inventory depletion math, attendance window logic, orchestrator anomaly checks — these are deterministic business rules acting on agent outputs, not trained models. This is normal and fine — most real "AI systems" are a mix of both — just don't call the depletion calculator "predictive AI," call it what it is.
+- **Real ML/AI**: face recognition (Facenet512 via DeepFace — a deep neural network trained on large face datasets, producing 512-d embeddings; genuinely a trained model, not a heuristic), complaint classification (LLM reasoning), menu PDF structuring (LLM), NLP inventory commands (LLM function-calling)
+- **Rule-based (not ML)**: inventory depletion math, attendance window logic, orchestrator anomaly checks — deterministic business rules acting on agent outputs. Normal and fine — just don't call the depletion calculator "predictive AI."
+- **Why Facenet512 over MobileFaceNet**: Both are deep CNN face recognition models trained with ArcFace-style loss. Facenet512 was chosen purely for **Windows compatibility** (no C++ compiler required). Academically both qualify as "deep learning face recognition" — the model architecture difference is an implementation detail, not a fundamental one.
 
 ---
 
 ## 7. Suggested Folder Structure
 
 ```
-hostel-system/
+Sem5_AI-Project/                    ← git root (branch: udit)
 ├── backend/
-│   ├── main.py
+│   ├── main.py                      ← FastAPI entry point, all agent routers wired here
+│   ├── requirements.txt
+│   ├── .env                         ← secrets (gitignored)
+│   ├── .env.example
 │   ├── agents/
-│   │   ├── vision_agent.py
-│   │   ├── attendance_agent.py
-│   │   ├── mess_agent.py
-│   │   ├── maintenance_agent.py
-│   │   └── orchestrator_agent.py
-│   ├── routers/
-│   │   ├── student.py
-│   │   ├── mess_staff.py
-│   │   └── warden.py
+│   │   ├── iris/                    ← IRIS 👁️ Vision Agent
+│   │   │   ├── face_engine.py       #   deepface/Facenet512 embedding core
+│   │   │   ├── enrollment.py        #   webcam + image upload enrollment
+│   │   │   ├── recognition.py       #   pgvector cosine search
+│   │   │   └── router.py            #   /iris/* FastAPI routes
+│   │   ├── sentinel/                ← SENTINEL 🛡️ Attendance Agent
+│   │   │   ├── attendance.py
+│   │   │   ├── scheduler_jobs.py
+│   │   │   └── router.py
+│   │   ├── nourish/                 ← NOURISH 🍽️ Mess Agent
+│   │   │   ├── entry.py
+│   │   │   ├── inventory.py
+│   │   │   ├── menu.py
+│   │   │   └── router.py
+│   │   ├── fixr/                    ← FIXR 🔧 Maintenance Agent
+│   │   │   ├── complaints.py
+│   │   │   └── router.py
+│   │   └── herald/                  ← HERALD 🔍 Orchestrator Agent
+│   │       ├── orchestrator.py
+│   │       ├── summarizer.py
+│   │       └── router.py
 │   ├── db/
-│   │   ├── models.py
-│   │   └── supabase_client.py
+│   │   ├── models.py                ← Pydantic models for all tables
+│   │   ├── supabase_client.py       ← singleton Supabase client
+│   │   ├── schema.sql               ← initial schema (run first)
+│   │   └── schema_alter_v2.sql      ← VECTOR(128→512) + match_face RPC (run after)
 │   ├── llm/
-│   │   ├── gemini_client.py       # menu PDF parsing only
-│   │   ├── groq_client.py         # complaint classification + inventory NLP
+│   │   ├── gemini_client.py         ← menu PDF parsing (Gemini Flash)
+│   │   ├── groq_client.py           ← complaint + NLP (Groq strict JSON)
 │   │   ├── complaint_classifier.py
 │   │   ├── menu_parser.py
 │   │   └── inventory_nlp.py
-│   ├── scheduler/
-│   │   └── jobs.py
-│   └── camera_client/          # runs locally at gate/mess kiosk
-│       └── capture.py
-├── frontend/
-│   ├── src/
-│   │   ├── portals/
-│   │   │   ├── student/
-│   │   │   ├── mess_staff/
-│   │   │   └── warden/
-│   │   ├── auth/
-│   │   └── components/
+│   ├── auth/
+│   │   ├── middleware.py
+│   │   └── router.py
+│   └── scheduler/
+│       └── jobs.py                  ← APScheduler jobs (SENTINEL + HERALD)
+├── camera_client/                   ← runs locally on kiosk/laptop
+│   ├── capture.py                   #   webcam loop → IRIS API → overlay display
+│   ├── config.py                    #   BACKEND_URL, KIOSK_API_KEY, CAMERA_INDEX
+│   └── requirements.txt
+├── frontend/                        ← React + Vite + Tailwind (Phase 7)
+│   └── src/
+│       ├── portals/
+│       │   ├── student/
+│       │   ├── mess_staff/
+│       │   └── warden/
+│       ├── auth/
+│       └── components/
+├── hostel-management-blueprint.md
 └── README.md
 ```
 
@@ -274,7 +302,7 @@ hostel-system/
 | DB + Storage + Auth | Supabase (free tier) |
 | Backend (FastAPI) | Render/Railway (free tier) |
 | Frontend | Vercel/Netlify (free tier) |
-| Camera/recognition client | Runs locally on your demo laptop/kiosk device, calls hosted backend API — but MobileFaceNet is light enough to also run server-side on the free-tier backend itself if you'd prefer a fully cloud-hosted demo |
+| Camera/recognition client | Runs locally on demo laptop (`camera_client/capture.py`), calls hosted backend API. Facenet512 inference runs on the FastAPI server (CPU). For demo purposes, the kiosk script captures from webcam and POSTs JPEG frames to `/iris/recognize`. |
 | Gemini API | Direct API calls from backend, free tier (Flash models), no credit card required — used only for menu PDF parsing |
 | Groq API | Direct API calls from backend, free tier — used for complaint classification and inventory NLP command parsing, with strict JSON-schema structured outputs |
 
