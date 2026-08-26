@@ -1,112 +1,151 @@
 # Hostel Management Multi-Agent System
 
-A hostel management system built on a **multi-agent architecture** using FastAPI, Supabase (PostgreSQL + pgvector), and LLMs (Gemini + Groq).
-
-## Agents
-
-| Codename | Role |
-|---|---|
-| **IRIS** | Vision Agent — face enrollment & recognition (MobileFaceNet) |
-| **SENTINEL** | Attendance Agent — gate events → attendance logs |
-| **NOURISH** | Mess Agent — entry gating, inventory, menu PDF parsing, NLP commands |
-| **FIXR** | Maintenance Agent — complaint classification via Groq |
-| **HERALD** | Orchestrator Agent — cross-agent anomaly detection |
+A comprehensive hostel management platform built on a **multi-agent architecture** using **FastAPI**, **Supabase (PostgreSQL + pgvector)**, **DeepFace (Facenet512)**, and **LLMs (Gemini + Groq)**.
 
 ---
 
-## Prerequisites
+## 🤖 Agents in the System
 
+| Codename | Agent | Type | Responsibility |
+|---|---|---|---|
+| **IRIS** 👁️ | Vision Agent | Deep Learning (`deepface` / Facenet512) | Face enrollment & real-time recognition for gate & mess kiosks |
+| **SENTINEL** 🛡️ | Attendance Agent | Rule-based + Scheduler | Processes gate events, marks attendance (present/late), tracks defaulters |
+| **NOURISH** 🍽️ | Mess Agent | Rule-based + LLMs (Gemini + Groq) | Entry gating, automated inventory depletion, menu PDF parsing, NLP command bar |
+| **FIXR** 🔧 | Maintenance Agent | LLM (`groq` structured outputs) | Automatic complaint categorization, urgency ranking, warden ticketing |
+| **HERALD** 🔍 | Orchestrator Agent | Cross-agent Reasoning + Summarizer | Cross-correlates data, flags student anomalies (missed meals/gate), daily digest |
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+- **Backend**: FastAPI (Python 3.11+)
+- **Database & Storage**: Supabase PostgreSQL with `pgvector` (512-dimensional cosine similarity indexing)
+- **Face Recognition**: `deepface` (Facenet512 model, OpenCV detector backend)
+- **Menu PDF Understanding**: Google Gemini API (Flash tier)
+- **NLP & Classification**: Groq API (Llama 3 / strict JSON schema mode)
+- **Scheduler**: APScheduler (inside FastAPI)
+- **Kiosk Client**: Local OpenCV capture script (`camera_client/capture.py`)
+
+---
+
+## 🚀 Setup & Installation
+
+### 1. Prerequisites
 - Python 3.11+
-- A [Supabase](https://supabase.com) project with `pgvector` extension enabled
-- (Phase 1+) A webcam and `onnxruntime` compatible system
-- API keys: Gemini (free at [aistudio.google.com](https://aistudio.google.com)) + Groq (free at [console.groq.com](https://console.groq.com))
+- A [Supabase](https://supabase.com) project
+- Free API keys from [Google AI Studio](https://aistudio.google.com) & [Groq Console](https://console.groq.com)
 
----
-
-## Phase 0 Setup
-
-### 1. Clone & enter the project
+### 2. Virtual Environment Setup
 ```powershell
-cd hostel-system/backend
-```
+# Navigate to the backend directory
+cd backend
 
-### 2. Create a virtual environment
-```powershell
+# Create and activate virtual environment
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-```
 
-### 3. Install dependencies
-```powershell
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 4. Set up environment variables
+### 3. Environment Configuration
+Create a `.env` file in the `backend/` directory based on `.env.example`:
 ```powershell
 Copy-Item .env.example .env
-# Open .env and fill in your Supabase URL + keys
+```
+Fill in your credentials:
+```env
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+KIOSK_API_KEY=your_random_kiosk_secret
+FACE_SIMILARITY_THRESHOLD=0.55
 ```
 
-### 5. Run the Supabase schema
-- Go to your Supabase Dashboard → **SQL Editor** → **New Query**
-- Paste the contents of `db/schema.sql` and click **Run**
+### 4. Database Setup (Supabase)
+In your **Supabase Dashboard → SQL Editor**:
+1. Run [`backend/db/schema.sql`](file:///d:/Sem5_AI-Project/backend/db/schema.sql) (creates tables, vector extension, indexes).
+2. Run [`backend/db/schema_alter_v2.sql`](file:///d:/Sem5_AI-Project/backend/db/schema_alter_v2.sql) (configures `VECTOR(512)` and the `match_face` similarity search function).
 
-### 6. Start the backend
+### 5. Running the Backend Server
 ```powershell
 uvicorn main:app --reload
 ```
-
-### 7. Verify
-Open [http://localhost:8000/health](http://localhost:8000/health) — you should see:
-```json
-{"status": "ok", "system": "Hostel Management Multi-Agent System"}
-```
-
-API docs available at [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
+- **Interactive Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-## Project Structure
+## 👁️ Testing Phase 1 (IRIS — Vision Agent)
+
+### 1. Via Swagger UI
+1. Open [http://localhost:8000/docs](http://localhost:8000/docs).
+2. **`GET /iris/status`**: Verify agent capabilities and model readiness.
+3. **`POST /iris/enroll`**: Enroll a student by providing `student_id` (UUID from DB) and uploading a photo (`mode=upload`) or webcam capture (`mode=webcam`).
+4. **`POST /iris/recognize`**: Upload a test picture to query pgvector and receive a structured recognition event.
+
+### 2. Via Camera Kiosk Client
+```powershell
+# From project root
+cd camera_client
+
+# Run kiosk in gate mode (spacebar captures and tests face against backend)
+python capture.py --mode gate
+```
+
+---
+
+## 📁 Repository Structure
 
 ```
-hostel-system/
+Sem5_AI-Project/                     # Git Repository Root
 ├── backend/
-│   ├── main.py                  # FastAPI entry point
-│   ├── requirements.txt
-│   ├── .env.example
-│   ├── db/
-│   │   ├── schema.sql           # Full Postgres schema — run in Supabase SQL Editor
-│   │   ├── models.py            # Pydantic models for all tables
-│   │   └── supabase_client.py  # Singleton DB client
+│   ├── main.py                      # FastAPI app entry point & router wiring
+│   ├── requirements.txt             # Python dependencies
+│   ├── .env                         # Environment variables (gitignored)
+│   ├── .env.example                 # Template for secrets
 │   ├── agents/
-│   │   ├── iris/                # Phase 1 — Vision Agent
-│   │   ├── sentinel/            # Phase 2 — Attendance Agent
-│   │   ├── nourish/             # Phase 3 — Mess Agent
-│   │   ├── fixr/                # Phase 4 — Maintenance Agent
-│   │   └── herald/              # Phase 5 — Orchestrator Agent
-│   ├── llm/                     # LLM clients (Gemini, Groq)
-│   ├── auth/                    # Phase 6 — Supabase JWT middleware
-│   └── scheduler/               # APScheduler jobs
-├── frontend/                    # Phase 7 — React + Vite + Tailwind
-├── camera_client/               # Phase 8 — Local OpenCV kiosk script
-└── .gitignore
+│   │   ├── iris/                    # Phase 1: IRIS (Vision Agent)
+│   │   │   ├── face_engine.py       # Facenet512 embeddings & face detection
+│   │   │   ├── enrollment.py        # Single image & multi-frame webcam enrollment
+│   │   │   ├── recognition.py       # pgvector cosine similarity search
+│   │   │   └── router.py            # /iris/* endpoints
+│   │   ├── sentinel/                # Phase 2: SENTINEL (Attendance Agent)
+│   │   ├── nourish/                 # Phase 3: NOURISH (Mess Agent)
+│   │   ├── fixr/                    # Phase 4: FIXR (Maintenance Agent)
+│   │   └── herald/                  # Phase 5: HERALD (Orchestrator Agent)
+│   ├── db/
+│   │   ├── models.py                # Pydantic data schemas
+│   │   ├── supabase_client.py       # Supabase connection singleton
+│   │   ├── schema.sql               # Base PostgreSQL tables & constraints
+│   │   └── schema_alter_v2.sql      # VECTOR(512) migration & match_face RPC
+│   ├── llm/                         # LLM interfaces (Gemini & Groq)
+│   ├── auth/                        # Role-based auth & JWT verification
+│   └── scheduler/                   # Background recurring jobs (APScheduler)
+├── camera_client/                   # Local OpenCV capture script for kiosk demo
+│   ├── capture.py                   # Real-time capture & UI overlay
+│   ├── config.py                    # Kiosk connection configuration
+│   └── requirements.txt             # Camera client dependencies
+├── hostel-management-blueprint.md   # Architectural blueprint
+└── README.md
 ```
 
 ---
 
-## Build Phases
+## 📅 Roadmap & Execution Progress
 
-| Phase | What gets built |
-|---|---|
-| **0** ✅ | Scaffold, DB schema, FastAPI skeleton |
-| 1 | IRIS — face enrollment & recognition |
-| 2 | SENTINEL — attendance marking & defaulters |
-| 3A | NOURISH — mess entry gating |
-| 3B | NOURISH — inventory + menu PDF (Gemini) |
-| 3C | NOURISH — NLP command bar (Groq) |
-| 4 | FIXR — complaint classification (Groq) |
-| 5 | HERALD — orchestrator anomaly detection |
-| 6 | Auth — Supabase JWT + role-gated routes |
-| 7 | Frontend — React portals (Student, Mess Staff, Warden) |
-| 8 | Camera kiosk client (OpenCV → API) |
-| 9 | Deployment — Render + Vercel |
+| Phase | Milestone | Status |
+|---|---|---|
+| **Phase 0** | Scaffold, Supabase DB, FastAPI Skeleton | ✅ Complete |
+| **Phase 1** | **IRIS** — Face Recognition (DeepFace / Facenet512) & Kiosk Client | ✅ Complete |
+| **Phase 2** | **SENTINEL** — Gate Attendance & Defaulters Scheduler | ⏳ Up Next |
+| **Phase 3A** | **NOURISH** — Mess Entry Gating | ⏸️ Pending |
+| **Phase 3B** | **NOURISH** — Inventory Depletion & Menu PDF Parsing (Gemini) | ⏸️ Pending |
+| **Phase 3C** | **NOURISH** — Mess Staff NLP Command Bar (Groq) | ⏸️ Pending |
+| **Phase 4** | **FIXR** — Maintenance Complaint Auto-Triage (Groq) | ⏸️ Pending |
+| **Phase 5** | **HERALD** — Multi-Agent Cross-Check & Anomaly Detection | ⏸️ Pending |
+| **Phase 6** | Supabase Auth Integration & Role Guards | ⏸️ Pending |
+| **Phase 7** | Frontend Portals (Student, Mess Staff, Warden) | ⏸️ Pending |
+| **Phase 8** | Camera Kiosk Deployment & Validation | ⏸️ Pending |
+| **Phase 9** | End-to-End Testing & Production Deploy | ⏸️ Pending |
