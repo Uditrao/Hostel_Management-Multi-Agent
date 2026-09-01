@@ -20,7 +20,7 @@ deepface            # face recognition — no C++ compile needed, works on Windo
 tf-keras            # deepface backend
 
 # Phase 2 (SENTINEL — Attendance Agent)
-# apscheduler==3.10.4
+apscheduler==3.10.4
 
 # Phase 3B (NOURISH — Gemini menu parser)
 # google-generativeai==0.7.2
