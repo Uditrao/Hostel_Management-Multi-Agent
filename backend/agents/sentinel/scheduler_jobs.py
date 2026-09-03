@@ -29,7 +29,7 @@ from agents.sentinel.attendance import (
 logger = logging.getLogger("hostel.sentinel.scheduler")
 
 _scheduler: AsyncIOScheduler | None = None
-DEFUALTER_JOB_ID = "sentinel_daily_cutoff_job"
+DEFAULTER_JOB_ID = "sentinel_daily_cutoff_job"
 
 
 async def run_defaulter_check_job() -> dict:
@@ -89,7 +89,7 @@ def start_sentinel_scheduler() -> AsyncIOScheduler:
     _scheduler.add_job(
         run_defaulter_check_job,
         trigger=trigger,
-        id=DEFUALTER_JOB_ID,
+        id=DEFAULTER_JOB_ID,
         replace_existing=True,
         name="SENTINEL Daily Attendance Cutoff & Defaulters Check",
     )
@@ -108,7 +108,7 @@ def reschedule_cutoff_job() -> None:
         return
 
     trigger = _get_cron_trigger_for_window()
-    _scheduler.reschedule_job(DEFUALTER_JOB_ID, trigger=trigger)
+    _scheduler.reschedule_job(DEFAULTER_JOB_ID, trigger=trigger)
     logger.info("🔄 SENTINEL Scheduler: Cutoff job rescheduled to new window end_time.")
 
 
