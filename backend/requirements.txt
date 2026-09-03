@@ -23,7 +23,8 @@ tf-keras            # deepface backend
 apscheduler==3.10.4
 
 # Phase 3B (NOURISH — Gemini menu parser)
-# google-generativeai==0.7.2
+# Uses httpx for Gemini REST API calls (avoids protobuf conflicts with TensorFlow)
+httpx
 
 # Phase 3C + 4 + 5 (NOURISH NLP + FIXR + HERALD — Groq)
 # groq==0.9.0
