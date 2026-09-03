@@ -139,10 +139,10 @@ Sem5_AI-Project/                     # Git Repository Root
 |---|---|---|
 | **Phase 0** | Scaffold, Supabase DB, FastAPI Skeleton | ✅ Complete |
 | **Phase 1** | **IRIS** — Face Recognition (DeepFace / Facenet512) & Kiosk Client | ✅ Complete |
-| **Phase 2** | **SENTINEL** — Gate Attendance & Defaulters Scheduler | ⏳ Up Next |
-| **Phase 3A** | **NOURISH** — Mess Entry Gating | ⏸️ Pending |
-| **Phase 3B** | **NOURISH** — Inventory Depletion & Menu PDF Parsing (Gemini) | ⏸️ Pending |
-| **Phase 3C** | **NOURISH** — Mess Staff NLP Command Bar (Groq) | ⏸️ Pending |
+| **Phase 2** | **SENTINEL** — Gate Attendance & Defaulters Scheduler | ✅ Complete |
+| **Phase 3A** | **NOURISH** — Mess Entry Gating | ✅ Complete |
+| **Phase 3B** | **NOURISH** — Inventory Depletion & Menu PDF Parsing (Gemini) | ✅ Complete |
+| **Phase 3C** | **NOURISH** — Mess Staff NLP Command Bar (Groq) | ⏳ Up Next |
 | **Phase 4** | **FIXR** — Maintenance Complaint Auto-Triage (Groq) | ⏸️ Pending |
 | **Phase 5** | **HERALD** — Multi-Agent Cross-Check & Anomaly Detection | ⏸️ Pending |
 | **Phase 6** | Supabase Auth Integration & Role Guards | ⏸️ Pending |
