@@ -3,10 +3,15 @@ Hostel Management Multi-Agent System — FastAPI Entry Point
 Agents: IRIS | SENTINEL | NOURISH | FIXR | HERALD
 """
 
+import os
+import logging
+from contextlib import asynccontextmanager
+
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
 
 from db.supabase_client import check_connection
 

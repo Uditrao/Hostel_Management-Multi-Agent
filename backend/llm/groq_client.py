@@ -19,8 +19,13 @@ import httpx
 logger = logging.getLogger("hostel.llm.client")
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-DEFAULT_GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-FAST_GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_MODELS = [
+    os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
+    "qwen/qwen3.8-27b",
+    "openai/gpt-oss-20b",
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+]
 
 GEMINI_API_URL_TEMPLATE = (
     "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
@@ -80,35 +85,43 @@ def _call_groq(
     timeout: float,
 ) -> Dict[str, Any]:
     """Call Groq chat completion endpoint with json_object response format."""
+    # Groq requires the word 'json' in messages when response_format is json_object
+    user_prompt = prompt if "json" in prompt.lower() else f"{prompt}\nReturn response as a valid json object."
+
     messages = []
     if system_instruction:
         messages.append({"role": "system", "content": system_instruction})
-    messages.append({"role": "user", "content": prompt})
-
-    payload = {
-        "model": DEFAULT_GROQ_MODEL,
-        "messages": messages,
-        "response_format": {"type": "json_object"},
-        "temperature": 0.1,
-    }
+    messages.append({"role": "user", "content": user_prompt})
 
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
+    last_error = None
     with httpx.Client(timeout=timeout) as client:
-        resp = client.post(GROQ_API_URL, headers=headers, json=payload)
-        if resp.status_code == 404 or resp.status_code == 400:
-            # Try fast model if default model isn't available
-            payload["model"] = FAST_GROQ_MODEL
-            resp = client.post(GROQ_API_URL, headers=headers, json=payload)
+        # Try candidate models until one succeeds
+        for model in GROQ_MODELS:
+            payload = {
+                "model": model,
+                "messages": messages,
+                "response_format": {"type": "json_object"},
+                "temperature": 0.1,
+            }
+            try:
+                resp = client.post(GROQ_API_URL, headers=headers, json=payload)
+                if resp.status_code in (400, 404):
+                    last_error = resp.text
+                    continue
+                resp.raise_for_status()
+                data = resp.json()
+                content = data["choices"][0]["message"]["content"]
+                return _parse_json_block(content)
+            except Exception as e:
+                last_error = e
+                continue
 
-        resp.raise_for_status()
-        data = resp.json()
-
-    content = data["choices"][0]["message"]["content"]
-    return _parse_json_block(content)
+    raise RuntimeError(f"All Groq models failed. Last error: {last_error}")
 
 
 def _call_gemini(

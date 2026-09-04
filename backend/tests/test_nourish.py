@@ -324,7 +324,8 @@ class NourishAgentTests(unittest.TestCase):
         mock_get_client.return_value = mock_client
         mock_client.table().insert().execute.return_value = MagicMock(data=[{"id": "log-123"}])
 
-        res = process_inventory_command("Mark 5kg potatoes spoiled", staff_id="staff-uuid-1")
+        staff_uuid = "a0000000-0000-0000-0000-000000000001"
+        res = process_inventory_command("Mark 5kg potatoes spoiled", staff_id=staff_uuid)
         self.assertTrue(res["success"])
         self.assertEqual(res["actions_count"], 1)
         self.assertEqual(res["log_id"], "log-123")
@@ -334,7 +335,7 @@ class NourishAgentTests(unittest.TestCase):
             action="subtract",
             quantity=5.0,
             unit="kg",
-            updated_by="staff-uuid-1",
+            updated_by=staff_uuid,
         )
 
     def test_process_inventory_command_empty(self):

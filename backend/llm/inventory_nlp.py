@@ -143,7 +143,7 @@ Your job is to parse their message and return a JSON object with this EXACT sche
 
 ACTION RULES:
 - "add": stock arriving, delivered, bought, added, "aa gaya", "receive hua", "plus", "dala".
-- "subtract": stock used, cooked, consumed, spoiled, rotten, expired, thrown, "kharab ho gaya", "ban gaya", "khatam hua", "waste".
+- "subtract": stock used, cooked, consumed, spoiled, rotten, expired, thrown, "kharab ho gaya", "ban gaya", "bana liye", "bana lye", "bana diya", "pakaya", "khatam hua", "waste".
 - "set": physical audit, count verification, reset, "actual stock is", "audit ke baad bacha hai", "set stock to".
 
 UNIT CONVERSIONS:
@@ -171,7 +171,11 @@ LANGUAGE EXAMPLES:
         {"item_name": "bread", "action": "add", "quantity": 20.0, "unit": "packets", "note": "restock"},
         {"item_name": "egg", "action": "add", "quantity": 15.0, "unit": "units", "note": "restock"}
       ]
-5. "Hello how are you"
+5. "aaj humne 10 kilo chawal bana liye h"
+   -> actions: [
+        {"item_name": "rice", "action": "subtract", "quantity": 10.0, "unit": "kg", "note": "cooked for meal"}
+      ]
+6. "Hello how are you"
    -> intent: "unclear", actions: [], clarification_needed: "No inventory items or quantities detected."
 
 Output only valid JSON conforming strictly to the requested schema.
@@ -238,8 +242,14 @@ def _normalize_llm_result(data: Dict[str, Any], raw_text: str) -> InventoryNLPRe
             name = str(act.get("item_name", "")).strip().lower()
             canonical_name = ITEM_SYNONYMS.get(name, name)
 
-            action = str(act.get("action", "add")).strip().lower()
-            if action not in ("add", "subtract", "set"):
+            action_raw = str(act.get("action", "add")).strip().lower()
+            if action_raw in ("subtract", "used", "cooked", "consume", "consumed", "waste", "spoiled", "kharab", "minus", "thrown", "remove"):
+                action = "subtract"
+            elif action_raw in ("add", "received", "delivered", "restock", "bought", "plus", "purchased"):
+                action = "add"
+            elif action_raw in ("set", "audit", "count", "reset"):
+                action = "set"
+            else:
                 action = "add"
 
             qty = float(act.get("quantity", 0))
@@ -280,7 +290,10 @@ def _normalize_llm_result(data: Dict[str, Any], raw_text: str) -> InventoryNLPRe
 
 _ACTION_KEYWORDS = {
     "add": ["add", "added", "receive", "received", "delivered", "bought", "restock", "aaya", "aa gaya", "dala"],
-    "subtract": ["subtract", "used", "spoiled", "kharab", "waste", "thrown", "cooked", "ban gaya", "khatam", "minus"],
+    "subtract": [
+        "subtract", "used", "spoiled", "kharab", "waste", "thrown", "cooked", "ban gaya",
+        "bana", "bana liye", "bana lye", "bana liya", "bana diya", "pakaya", "paka", "khatam", "minus"
+    ],
     "set": ["set", "audit", "remaining", "count", "actual", "reset"],
 }
 
@@ -310,10 +323,21 @@ def _rule_based_fallback(text: str) -> InventoryNLPResult:
 
         item_cleaned = raw_item.strip()
         # strip known noise words
-        for noise in ["delivered", "by vendor", "spoiled", "today", "stock", "aa gaya", "aa gayi", "kharab"]:
-            item_cleaned = item_cleaned.replace(noise, "").strip()
+        for noise in [
+            "delivered", "by vendor", "spoiled", "today", "stock", "aa gaya", "aa gayi",
+            "kharab", "bana liye h", "bana liye", "bana lye", "bana liya", "bana diya",
+            "bana", "liye h", "liye", "lye", "h", "hai"
+        ]:
+            item_cleaned = re.sub(r"\b" + re.escape(noise) + r"\b", "", item_cleaned).strip()
 
-        canonical_item = ITEM_SYNONYMS.get(item_cleaned, item_cleaned)
+        # Check if any known food synonym is inside item_cleaned
+        matched_item = None
+        for syn, canonical in ITEM_SYNONYMS.items():
+            if re.search(r"\b" + re.escape(syn) + r"\b", item_cleaned):
+                matched_item = canonical
+                break
+
+        canonical_item = matched_item or ITEM_SYNONYMS.get(item_cleaned, item_cleaned)
         if canonical_item:
             actions.append(
                 InventoryActionItem(
