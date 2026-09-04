@@ -52,6 +52,10 @@ from agents.nourish.menu import (
     get_menu,
     list_menus,
 )
+from agents.nourish.nlp_command import (
+    process_inventory_command,
+    get_nlp_command_logs,
+)
 
 logger = logging.getLogger("hostel.nourish.router")
 
@@ -92,6 +96,11 @@ class MenuSaveRequest(BaseModel):
     confirmed_by:   Optional[str]        = Field(None, description="UUID of confirming staff member")
 
 
+class InventoryCommandRequest(BaseModel):
+    command:  str           = Field(..., example="Added 25kg rice and 10L milk delivered by vendor", description="Natural language inventory command")
+    staff_id: Optional[str] = Field(None, description="UUID of the staff member (optional)")
+
+
 # -- Phase 3A Routes -----------------------------------------------------------
 
 @router.get("/status", summary="NOURISH agent health check")
@@ -111,6 +120,7 @@ async def nourish_status():
             "post_meal_depletion",
             "inventory_alerts",
             "menu_pdf_parsing",
+            "inventory_nlp_command",
         ],
         "current_meal":  current_meal,
         "meal_windows":  {
@@ -334,3 +344,42 @@ async def list_all_menus(
 ):
     """Returns all menu entries ordered by newest effective_date first."""
     return list_menus(limit=limit, offset=offset)
+
+
+# -- Phase 3C Routes (NLP Command Bar) -----------------------------------------
+
+@router.post("/inventory/command", summary="Process natural language inventory command (Phase 3C)")
+async def execute_inventory_command(body: InventoryCommandRequest):
+    """
+    Process natural language stock update command from mess staff.
+    Accepts commands in English, Hindi, or Hinglish:
+      - "Added 25kg rice and 10L milk delivered by vendor"
+      - "Mark 5kg potatoes spoiled"
+      - "Set dal stock to 30kg after audit"
+      - "20 packet bread aa gaya"
+    Parses actions via Groq/Gemini LLM, applies them to inventory, and records audit log.
+    """
+    cmd = body.command.strip()
+    if not cmd:
+        raise HTTPException(status_code=400, detail="Command string cannot be empty.")
+
+    result = process_inventory_command(raw_command=cmd, staff_id=body.staff_id)
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=422,
+            detail=result.get("clarification_needed") or "Could not parse inventory command.",
+        )
+    return result
+
+
+@router.get("/inventory/command-logs", summary="Get audit logs for mess staff NLP commands (Phase 3C)")
+async def list_inventory_command_logs(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    """Retrieve paginated audit history of mess staff NLP inventory commands."""
+    result = get_nlp_command_logs(limit=limit, offset=offset)
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to retrieve logs."))
+    return result
+

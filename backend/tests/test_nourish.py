@@ -58,6 +58,14 @@ from agents.nourish.menu import (
     save_menu,
     get_menu,
 )
+from agents.nourish.nlp_command import (
+    process_inventory_command,
+    get_nlp_command_logs,
+)
+from llm.inventory_nlp import (
+    parse_inventory_command,
+    _rule_based_fallback,
+)
 from agents.nourish.router import router as nourish_router
 
 test_app = FastAPI()
@@ -263,6 +271,109 @@ class NourishAgentTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["total_items"], 2)
 
+    # ── 7. Phase 3C NLP Command Bar ──────────────────────────────────────────
+
+    @patch("llm.inventory_nlp.generate_structured_json")
+    def test_parse_inventory_command_llm(self, mock_llm):
+        mock_llm.return_value = {
+            "intent": "inventory_update",
+            "actions": [
+                {"item_name": "rice", "action": "add", "quantity": 25.0, "unit": "kg", "note": "vendor delivery"},
+                {"item_name": "milk", "action": "add", "quantity": 10.0, "unit": "L", "note": "vendor delivery"},
+            ],
+            "summary": "Added 25kg rice and 10L milk",
+        }
+        res = parse_inventory_command("Added 25kg rice and 10L milk delivered by vendor")
+        self.assertEqual(res.intent, "inventory_update")
+        self.assertEqual(len(res.actions), 2)
+        self.assertEqual(res.actions[0].item_name, "rice")
+        self.assertEqual(res.actions[0].action, "add")
+        self.assertEqual(res.actions[0].quantity, 25.0)
+        self.assertEqual(res.actions[0].unit, "kg")
+        self.assertEqual(res.actions[1].item_name, "milk")
+        self.assertEqual(res.actions[1].quantity, 10.0)
+
+    def test_parse_inventory_command_rule_fallback(self):
+        # Offline rule fallback without LLM
+        res = _rule_based_fallback("add 20kg rice and 15kg potato")
+        self.assertEqual(res.intent, "inventory_update")
+        self.assertEqual(len(res.actions), 2)
+        self.assertEqual(res.actions[0].item_name, "rice")
+        self.assertEqual(res.actions[0].quantity, 20.0)
+        self.assertEqual(res.actions[1].item_name, "potato")
+
+    @patch("agents.nourish.nlp_command.get_client")
+    @patch("agents.nourish.nlp_command.update_stock")
+    @patch("agents.nourish.nlp_command.parse_inventory_command")
+    def test_process_inventory_command_execution(self, mock_parse, mock_update, mock_get_client):
+        from llm.inventory_nlp import InventoryNLPResult, InventoryActionItem
+
+        mock_parse.return_value = InventoryNLPResult(
+            intent="inventory_update",
+            actions=[
+                InventoryActionItem(item_name="potato", action="subtract", quantity=5.0, unit="kg", note="spoiled")
+            ],
+            summary="Subtracted 5kg potato",
+        )
+        mock_update.return_value = {
+            "success": True,
+            "item": {"item_name": "potato", "quantity_available": 45.0, "unit": "kg"},
+            "message": "Stock updated: potato -> 45.0 kg",
+        }
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+        mock_client.table().insert().execute.return_value = MagicMock(data=[{"id": "log-123"}])
+
+        res = process_inventory_command("Mark 5kg potatoes spoiled", staff_id="staff-uuid-1")
+        self.assertTrue(res["success"])
+        self.assertEqual(res["actions_count"], 1)
+        self.assertEqual(res["log_id"], "log-123")
+        self.assertEqual(res["results"][0]["status"], "applied")
+        mock_update.assert_called_once_with(
+            item_name="potato",
+            action="subtract",
+            quantity=5.0,
+            unit="kg",
+            updated_by="staff-uuid-1",
+        )
+
+    def test_process_inventory_command_empty(self):
+        res = process_inventory_command("   ")
+        self.assertFalse(res["success"])
+        self.assertIsNotNone(res["clarification_needed"])
+
+    @patch("agents.nourish.router.process_inventory_command")
+    def test_endpoint_inventory_command(self, mock_proc):
+        mock_proc.return_value = {
+            "success": True,
+            "raw_command": "Added 10kg rice",
+            "summary": "Added 10kg rice",
+            "actions_count": 1,
+            "actions": [{"item_name": "rice", "action": "add", "quantity": 10.0, "unit": "kg"}],
+            "results": [{"status": "applied", "message": "Updated"}],
+            "log_id": "log-999",
+        }
+        resp = client.post(
+            "/nourish/inventory/command",
+            json={"command": "Added 10kg rice", "staff_id": "staff-1"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["log_id"], "log-999")
+
+    @patch("agents.nourish.router.get_nlp_command_logs")
+    def test_endpoint_inventory_command_logs(self, mock_logs):
+        mock_logs.return_value = {
+            "success": True,
+            "total": 1,
+            "logs": [{"id": "log-1", "raw_command": "Added 10kg rice"}],
+        }
+        resp = client.get("/nourish/inventory/command-logs?limit=10&offset=0")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["total"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
+
