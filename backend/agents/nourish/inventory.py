@@ -25,11 +25,22 @@ import os
 from datetime import date, datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List
 
+import uuid
 from db.supabase_client import get_client
 
 logger = logging.getLogger("hostel.nourish.inventory")
 
 IST_TZ = timezone(timedelta(hours=5, minutes=30))
+
+
+def _clean_uuid(val: Optional[str]) -> Optional[str]:
+    """Return valid UUID string or None if string is not a valid UUID."""
+    if not val:
+        return None
+    try:
+        return str(uuid.UUID(str(val).strip()))
+    except (ValueError, AttributeError):
+        return None
 
 # Urgency thresholds (how many upcoming meals the remaining stock can cover)
 _CRITICAL = int(os.getenv("INVENTORY_CRITICAL_MEALS", "1"))
@@ -132,8 +143,9 @@ def update_stock(
                 "unit": unit,
                 "last_updated": now_iso,
             }
-            if updated_by:
-                payload["updated_by"] = updated_by
+            clean_updater = _clean_uuid(updated_by)
+            if clean_updater:
+                payload["updated_by"] = clean_updater
 
             res = (
                 client.table("inventory")
@@ -143,10 +155,10 @@ def update_stock(
             )
             updated = res.data[0] if res.data else {**row, **payload}
             logger.info(
-                "NOURISH Inventory: %s %s %s %s (was %.2f → now %.2f)",
+                "NOURISH Inventory: %s %s %s %s (was %.2f -> now %.2f)",
                 action, quantity, unit, item_name, current_qty, new_qty,
             )
-            return {"success": True, "item": updated, "message": f"Stock updated: {item_name} → {new_qty} {unit}"}
+            return {"success": True, "item": updated, "message": f"Stock updated: {item_name} -> {new_qty} {unit}"}
 
         # Item doesn't exist yet — create it (only for 'set' or 'add')
         if action == "subtract":
@@ -159,8 +171,9 @@ def update_stock(
             "unit": unit,
             "last_updated": now_iso,
         }
-        if updated_by:
-            create_payload["updated_by"] = updated_by
+        clean_updater = _clean_uuid(updated_by)
+        if clean_updater:
+            create_payload["updated_by"] = clean_updater
 
         res = client.table("inventory").insert(create_payload).execute()
         created = res.data[0] if res.data else create_payload

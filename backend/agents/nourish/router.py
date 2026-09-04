@@ -97,8 +97,8 @@ class MenuSaveRequest(BaseModel):
 
 
 class InventoryCommandRequest(BaseModel):
-    command:  str           = Field(..., example="Added 25kg rice and 10L milk delivered by vendor", description="Natural language inventory command")
-    staff_id: Optional[str] = Field(None, description="UUID of the staff member (optional)")
+    command:  str           = Field(..., example="aaj humne 10 kilo chawal bana liye h", description="Natural language inventory command")
+    staff_id: Optional[str] = Field(None, example=None, description="UUID of the staff member (optional, leave null or omit)")
 
 
 # -- Phase 3A Routes -----------------------------------------------------------

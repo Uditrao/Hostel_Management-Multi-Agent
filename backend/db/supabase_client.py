@@ -6,9 +6,15 @@ Used by all agents to interact with the database.
 import os
 import logging
 from supabase import create_client, Client
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load backend/.env explicitly
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+if _env_path.exists():
+    load_dotenv(dotenv_path=_env_path)
+else:
+    load_dotenv()
 
 logger = logging.getLogger("hostel.db")
 
