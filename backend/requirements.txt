@@ -27,7 +27,9 @@ apscheduler==3.10.4
 httpx
 
 # Phase 3C + 4 + 5 (NOURISH NLP + FIXR + HERALD — Groq)
-# groq==0.9.0
+# NOTE: FIXR uses groq_client.py which calls Groq via httpx (already listed above).
+# No additional groq SDK package required.
+# groq==0.9.0  # Uncomment only if you prefer the official SDK over httpx calls
 
 # Phase 6 (Auth — JWT verification)
 # python-jose[cryptography]==3.3.0
