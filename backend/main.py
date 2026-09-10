@@ -34,19 +34,19 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("⚠️  Supabase connection FAILED — check your .env keys.")
 
-    # Start SENTINEL scheduler
+    # Start all background schedulers (SENTINEL + HERALD)
     try:
-        from agents.sentinel.scheduler_jobs import start_sentinel_scheduler, shutdown_sentinel_scheduler
-        start_sentinel_scheduler()
+        from scheduler.jobs import start_all_schedulers
+        start_all_schedulers()
     except Exception as exc:
-        logger.warning("⚠️  Could not start SENTINEL scheduler: %s", exc)
+        logger.warning("⚠️  Could not start schedulers: %s", exc)
 
     yield
 
-    # Clean shutdown of scheduler
+    # Clean shutdown of all schedulers
     try:
-        from agents.sentinel.scheduler_jobs import shutdown_sentinel_scheduler
-        shutdown_sentinel_scheduler()
+        from scheduler.jobs import shutdown_all_schedulers
+        shutdown_all_schedulers()
     except Exception:
         pass
 
@@ -86,12 +86,12 @@ from agents.iris.router      import router as iris_router
 from agents.sentinel.router  import router as sentinel_router
 from agents.nourish.router   import router as nourish_router
 from agents.fixr.router      import router as fixr_router
-# from agents.herald.router    import router as herald_router
+from agents.herald.router    import router as herald_router
 # from auth.router             import router as auth_router
 
 app.include_router(iris_router,      prefix="/iris",     tags=["IRIS — Vision"])
 app.include_router(sentinel_router,  prefix="/sentinel", tags=["SENTINEL — Attendance"])
 app.include_router(nourish_router,   prefix="/nourish",  tags=["NOURISH — Mess"])
 app.include_router(fixr_router,      prefix="/fixr",     tags=["FIXR — Maintenance"])
-# app.include_router(herald_router,    prefix="/herald",   tags=["HERALD — Orchestrator"])
+app.include_router(herald_router,    prefix="/herald",   tags=["HERALD — Orchestrator"])
 # app.include_router(auth_router,      prefix="/auth",     tags=["Auth"])
