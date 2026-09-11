@@ -3,11 +3,13 @@ HERALD -- FastAPI Router (Phase 5)
 ===================================
 Endpoints:
 
-  GET  /herald/status              -- HERALD agent health check + stats
-  GET  /herald/anomalies           -- Warden views anomaly flags (filterable)
-  POST /herald/run                 -- Warden triggers on-demand orchestrator run
-  PATCH /herald/anomalies/{id}/seen -- Warden marks a flag as seen
-  GET  /herald/summary             -- Groq-generated Warden briefing paragraph
+  GET  /herald/status              -- HERALD agent health check + stats (public)
+  GET  /herald/anomalies           -- Warden views anomaly flags [warden]
+  POST /herald/run                 -- Warden triggers on-demand orchestrator run [warden]
+  PATCH /herald/anomalies/{id}/seen -- Warden marks a flag as seen [warden]
+  GET  /herald/summary             -- Groq-generated Warden briefing paragraph [warden]
+
+Phase 6: Role guards applied.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from agents.herald.orchestrator import (
     run_orchestrator,
@@ -24,6 +26,7 @@ from agents.herald.orchestrator import (
     get_herald_stats,
 )
 from agents.herald.summarizer import generate_summary
+from auth.dependencies import require_role
 
 logger = logging.getLogger("hostel.herald.router")
 
@@ -60,7 +63,7 @@ async def herald_status():
 
 @router.get(
     "/anomalies",
-    summary="Warden: view anomaly flags (filterable)",
+    summary="Warden: view anomaly flags [warden]",
     response_description="List of anomaly flags with embedded student info",
 )
 async def get_anomalies(
@@ -77,6 +80,7 @@ async def get_anomalies(
     ),
     limit: int  = Query(100, ge=1, le=500, description="Max flags to return"),
     offset: int = Query(0,   ge=0,         description="Pagination offset"),
+    _warden: dict = Depends(require_role("warden")),
 ):
     """
     Returns all anomaly flags raised by HERALD, sorted newest first.
@@ -107,10 +111,12 @@ async def get_anomalies(
 
 @router.post(
     "/run",
-    summary="Warden: trigger HERALD orchestrator run on-demand",
+    summary="Warden: trigger HERALD orchestrator run on-demand [warden]",
     response_description="Run summary with new flag counts and breakdown",
 )
-async def trigger_run():
+async def trigger_run(
+    _warden: dict = Depends(require_role("warden")),
+):
     """
     Manually triggers the HERALD orchestrator to run all three anomaly checks
     immediately (without waiting for the nightly cron):
@@ -135,7 +141,7 @@ async def trigger_run():
 
 @router.patch(
     "/anomalies/{flag_id}/seen",
-    summary="Warden: mark an anomaly flag as seen",
+    summary="Warden: mark an anomaly flag as seen [warden]",
     response_description="Updated anomaly flag record",
 )
 async def mark_anomaly_seen(
@@ -143,6 +149,7 @@ async def mark_anomaly_seen(
         ...,
         description="UUID of the anomaly flag to mark as seen",
     ),
+    _warden: dict = Depends(require_role("warden")),
 ):
     """
     Acknowledge an anomaly flag. Sets `seen_by_warden = true` so it no longer
@@ -164,7 +171,7 @@ async def mark_anomaly_seen(
 
 @router.get(
     "/summary",
-    summary="Generate an LLM Warden briefing from today's anomaly flags",
+    summary="Generate an LLM Warden briefing from today's anomaly flags [warden]",
     response_description="Plain-text Warden briefing paragraph",
 )
 async def get_warden_summary(
@@ -172,6 +179,7 @@ async def get_warden_summary(
         True,
         description="If true (default), summarise only unseen flags",
     ),
+    _warden: dict = Depends(require_role("warden")),
 ):
     """
     Calls HERALD's Groq summarizer to produce a concise one-paragraph briefing

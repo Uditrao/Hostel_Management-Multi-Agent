@@ -67,9 +67,19 @@ from llm.inventory_nlp import (
     _rule_based_fallback,
 )
 from agents.nourish.router import router as nourish_router
+from auth.dependencies import get_current_user, get_kiosk_or_warden
 
 test_app = FastAPI()
 test_app.include_router(nourish_router, prefix="/nourish")
+test_app.dependency_overrides[get_current_user] = lambda: {
+    "sub": "550e8400-e29b-41d4-a716-446655440001",
+    "email": "warden@hostel.com",
+    "user_metadata": {"role": "warden"},
+}
+test_app.dependency_overrides[get_kiosk_or_warden] = lambda: {
+    "sub": "kiosk",
+    "user_metadata": {"role": "kiosk"},
+}
 client = TestClient(test_app)
 
 

@@ -59,9 +59,15 @@ from llm.complaint_classifier import (
     _validate_classification,
 )
 from agents.fixr.router import router as fixr_router
+from auth.dependencies import get_current_user
 
 test_app = FastAPI()
 test_app.include_router(fixr_router, prefix="/fixr")
+test_app.dependency_overrides[get_current_user] = lambda: {
+    "sub": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "test@hostel.com",
+    "user_metadata": {"role": "warden"},
+}
 client = TestClient(test_app)
 
 STUDENT_UUID = "550e8400-e29b-41d4-a716-446655440000"

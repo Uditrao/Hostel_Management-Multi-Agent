@@ -1,25 +1,29 @@
 """
-NOURISH — FastAPI Router (Phase 3A + 3B)
-==========================================
+NOURISH — FastAPI Router (Phase 3A + 3B + 3C)
+===============================================
 Phase 3A endpoints:
-  GET  /nourish/status          -- Agent health check & current meal window
-  POST /nourish/mess-event      -- Process identity event from IRIS/kiosk at mess gate
-  GET  /nourish/entries         -- Today's entry counts per meal (warden/staff view)
-  GET  /nourish/entries/{meal}  -- Paginated entries for a specific meal
-  GET  /nourish/meal-windows    -- Show configured meal time windows
+  GET  /nourish/status          -- Agent health check & current meal window (public)
+  POST /nourish/mess-event      -- Process identity event from IRIS/kiosk at mess gate [warden | kiosk]
+  GET  /nourish/entries         -- Today's entry counts per meal [warden | mess_staff]
+  GET  /nourish/entries/{meal}  -- Paginated entries for a specific meal [warden | mess_staff]
+  GET  /nourish/meal-windows    -- Show configured meal time windows (public)
 
 Phase 3B endpoints (Inventory + Menu):
-  GET  /nourish/inventory                      -- Full inventory table
-  POST /nourish/inventory/update               -- Set / add / subtract stock (staff action)
-  GET  /nourish/inventory/alerts               -- Active inventory alerts (sorted by urgency)
-  POST /nourish/inventory/alerts/{id}/resolve  -- Resolve an alert
-  POST /nourish/depletion                      -- Manually trigger post-meal depletion
-  POST /nourish/menu/upload                    -- Upload + parse a menu PDF via Gemini
-  POST /nourish/menu/save                      -- Save confirmed menu to DB
-  GET  /nourish/menu/{meal_type}               -- Get current menu for a meal
-  GET  /nourish/menus                          -- List all menus (paginated)
+  GET  /nourish/inventory                      -- Full inventory table [warden | mess_staff]
+  POST /nourish/inventory/update               -- Set / add / subtract stock [warden | mess_staff]
+  GET  /nourish/inventory/alerts               -- Active inventory alerts [warden | mess_staff]
+  POST /nourish/inventory/alerts/{id}/resolve  -- Resolve an alert [warden | mess_staff]
+  POST /nourish/depletion                      -- Manually trigger post-meal depletion [warden | mess_staff]
+  POST /nourish/menu/upload                    -- Upload + parse a menu PDF via Gemini [warden | mess_staff]
+  POST /nourish/menu/save                      -- Save confirmed menu to DB [warden | mess_staff]
+  GET  /nourish/menu/{meal_type}               -- Get current menu for a meal [any authenticated]
+  GET  /nourish/menus                          -- List all menus [any authenticated]
 
-Phase 3C routes (NLP command bar) will be added to this router next.
+Phase 3C routes (NLP command bar):
+  POST /nourish/inventory/command              -- NLP inventory command [warden | mess_staff]
+  GET  /nourish/inventory/command-logs         -- Command audit log [warden | mess_staff]
+
+Phase 6: Role guards applied.
 """
 
 from __future__ import annotations
@@ -28,7 +32,7 @@ import logging
 from datetime import date
 from typing import Optional, List
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
 from agents.nourish.entry import (
@@ -56,6 +60,7 @@ from agents.nourish.nlp_command import (
     process_inventory_command,
     get_nlp_command_logs,
 )
+from auth.dependencies import get_any_authenticated_user, get_kiosk_or_warden, require_role
 
 logger = logging.getLogger("hostel.nourish.router")
 
@@ -135,10 +140,13 @@ async def nourish_status():
 
 @router.post(
     "/mess-event",
-    summary="Process identity event at the mess gate",
+    summary="Process identity event at the mess gate [warden | kiosk]",
     response_description="Entry decision: allowed or denied, with reason and log entry",
 )
-async def process_mess_event(event: MessEventRequest):
+async def process_mess_event(
+    event: MessEventRequest,
+    _auth: dict = Depends(get_kiosk_or_warden),
+):
     """
     Called by IRIS or the Camera Kiosk after face recognition at the mess gate.
 
@@ -158,12 +166,13 @@ async def process_mess_event(event: MessEventRequest):
     return result
 
 
-@router.get("/entries", summary="Today's mess entry summary (warden/staff view)")
+@router.get("/entries", summary="Today's mess entry summary [warden | mess_staff]")
 async def get_entries_summary(
     target_date: Optional[str] = Query(
         None, pattern=r"^\d{4}-\d{2}-\d{2}$",
         description="Date in YYYY-MM-DD format (defaults to today IST)",
     ),
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
 ):
     parsed_date: Optional[date] = None
     if target_date:
@@ -174,13 +183,14 @@ async def get_entries_summary(
     return get_today_entries(target_date=parsed_date)
 
 
-@router.get("/entries/{meal_type}", summary="Detailed entries for a specific meal")
+@router.get("/entries/{meal_type}", summary="Detailed entries for a specific meal [warden | mess_staff]")
 async def get_meal_entries(
     meal_type: str,
     target_date: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
     limit: int = Query(100, ge=1, le=200),
     offset: int = Query(0, ge=0),
     recognised_only: bool = Query(False),
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
 ):
     if meal_type not in ("breakfast", "lunch", "dinner"):
         raise HTTPException(status_code=400, detail="meal_type must be 'breakfast', 'lunch', or 'dinner'.")
@@ -210,14 +220,19 @@ async def get_meal_windows():
 
 # -- Phase 3B Routes: Inventory ------------------------------------------------
 
-@router.get("/inventory", summary="Get full inventory list (staff/warden view)")
-async def inventory_list():
+@router.get("/inventory", summary="Get full inventory list [warden | mess_staff]")
+async def inventory_list(
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
     """Returns the full mess inventory table sorted by item name."""
     return get_inventory()
 
 
-@router.post("/inventory/update", summary="Update inventory stock (staff action)")
-async def inventory_update(body: StockUpdateRequest):
+@router.post("/inventory/update", summary="Update inventory stock [warden | mess_staff]")
+async def inventory_update(
+    body: StockUpdateRequest,
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
     """
     Set, add, or subtract quantity for a named inventory item.
 
@@ -236,9 +251,10 @@ async def inventory_update(body: StockUpdateRequest):
     return result
 
 
-@router.get("/inventory/alerts", summary="Get active inventory alerts (sorted by urgency)")
+@router.get("/inventory/alerts", summary="Get active inventory alerts [warden | mess_staff]")
 async def inventory_alerts(
     urgency: Optional[str] = Query(None, description="Filter: 'critical' | 'high' | 'medium'"),
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
 ):
     """Returns all unresolved inventory alerts, sorted critical → high → medium."""
     return get_active_alerts(urgency_filter=urgency)
@@ -246,9 +262,12 @@ async def inventory_alerts(
 
 @router.post(
     "/inventory/alerts/{alert_id}/resolve",
-    summary="Resolve an inventory alert",
+    summary="Resolve an inventory alert [warden | mess_staff]",
 )
-async def resolve_inventory_alert(alert_id: str):
+async def resolve_inventory_alert(
+    alert_id: str,
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
     """Mark a specific inventory alert as resolved (staff/warden action)."""
     result = resolve_alert(alert_id)
     if not result.get("success"):
@@ -256,8 +275,11 @@ async def resolve_inventory_alert(alert_id: str):
     return result
 
 
-@router.post("/depletion", summary="Trigger post-meal inventory depletion")
-async def run_depletion(body: DepletionRequest):
+@router.post("/depletion", summary="Trigger post-meal inventory depletion [warden | mess_staff]")
+async def run_depletion(
+    body: DepletionRequest,
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
     """
     Calculates consumption for a completed meal and subtracts from inventory.
     Raises `inventory_alerts` for any ingredient falling below stock thresholds.
@@ -275,10 +297,11 @@ async def run_depletion(body: DepletionRequest):
 
 @router.post(
     "/menu/upload",
-    summary="Upload a mess menu PDF and parse it with Gemini",
+    summary="Upload a mess menu PDF and parse it with Gemini [warden | mess_staff]",
 )
 async def upload_menu_pdf(
     file: UploadFile = File(..., description="Mess menu PDF file"),
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
 ):
     """
     Upload a PDF mess menu. Sends it to **Google Gemini** (native PDF understanding)
@@ -298,8 +321,11 @@ async def upload_menu_pdf(
     return result
 
 
-@router.post("/menu/save", summary="Save confirmed menu to database (supports single meal or full weekly batch)")
-async def save_confirmed_menu(body: MenuSaveRequest):
+@router.post("/menu/save", summary="Save confirmed menu to database [warden | mess_staff]")
+async def save_confirmed_menu(
+    body: MenuSaveRequest,
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
     """
     Save staff-confirmed menu(s) to the `mess_menu` table.
     - If `meals` is provided: saves all meals across the week in one batch.
@@ -323,10 +349,11 @@ async def save_confirmed_menu(body: MenuSaveRequest):
     return result
 
 
-@router.get("/menu/{meal_type}", summary="Get current/active menu for a meal")
+@router.get("/menu/{meal_type}", summary="Get current/active menu for a meal [any authenticated]")
 async def get_current_menu(
     meal_type: str,
     target_date: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    _user: dict = Depends(get_any_authenticated_user),
 ):
     """Retrieve the most recently effective menu for breakfast, lunch, or dinner."""
     if meal_type not in ("breakfast", "lunch", "dinner"):
@@ -337,10 +364,11 @@ async def get_current_menu(
     return result
 
 
-@router.get("/menus", summary="List all menu entries (paginated)")
+@router.get("/menus", summary="List all menu entries [any authenticated]")
 async def list_all_menus(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    _user: dict = Depends(get_any_authenticated_user),
 ):
     """Returns all menu entries ordered by newest effective_date first."""
     return list_menus(limit=limit, offset=offset)
@@ -348,8 +376,11 @@ async def list_all_menus(
 
 # -- Phase 3C Routes (NLP Command Bar) -----------------------------------------
 
-@router.post("/inventory/command", summary="Process natural language inventory command (Phase 3C)")
-async def execute_inventory_command(body: InventoryCommandRequest):
+@router.post("/inventory/command", summary="Process natural language inventory command [warden | mess_staff]")
+async def execute_inventory_command(
+    body: InventoryCommandRequest,
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
     """
     Process natural language stock update command from mess staff.
     Accepts commands in English, Hindi, or Hinglish:
@@ -372,10 +403,11 @@ async def execute_inventory_command(body: InventoryCommandRequest):
     return result
 
 
-@router.get("/inventory/command-logs", summary="Get audit logs for mess staff NLP commands (Phase 3C)")
+@router.get("/inventory/command-logs", summary="Get audit logs for mess staff NLP commands [warden | mess_staff]")
 async def list_inventory_command_logs(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
 ):
     """Retrieve paginated audit history of mess staff NLP inventory commands."""
     result = get_nlp_command_logs(limit=limit, offset=offset)

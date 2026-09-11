@@ -1,6 +1,6 @@
 """
 Hostel Management Multi-Agent System — FastAPI Entry Point
-Agents: IRIS | SENTINEL | NOURISH | FIXR | HERALD
+Agents: IRIS | SENTINEL | NOURISH | FIXR | HERALD | AUTH (Phase 6)
 """
 
 import os
@@ -12,6 +12,8 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
+from fastapi.security import HTTPBearer
 
 from db.supabase_client import check_connection
 
@@ -58,9 +60,11 @@ app = FastAPI(
     title="Hostel Management Multi-Agent System",
     description=(
         "Multi-agent backend: IRIS (vision), SENTINEL (attendance), "
-        "NOURISH (mess), FIXR (maintenance), HERALD (orchestrator)."
+        "NOURISH (mess), FIXR (maintenance), HERALD (orchestrator), "
+        "AUTH (Supabase JWT + role guards). "
+        "Click the 🔒 Authorize button to enter your Bearer token."
     ),
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -81,17 +85,17 @@ async def health():
     return {"status": "ok", "system": "Hostel Management Multi-Agent System"}
 
 
-# ─── Routers (uncomment as each Phase is completed) ───────────────────────────
+# ─── Routers ──────────────────────────────────────────────────────────────────
 from agents.iris.router      import router as iris_router
 from agents.sentinel.router  import router as sentinel_router
 from agents.nourish.router   import router as nourish_router
 from agents.fixr.router      import router as fixr_router
 from agents.herald.router    import router as herald_router
-# from auth.router             import router as auth_router
+from auth.router             import router as auth_router
 
+app.include_router(auth_router,      prefix="/auth",     tags=["AUTH — Auth & Roles"])
 app.include_router(iris_router,      prefix="/iris",     tags=["IRIS — Vision"])
 app.include_router(sentinel_router,  prefix="/sentinel", tags=["SENTINEL — Attendance"])
 app.include_router(nourish_router,   prefix="/nourish",  tags=["NOURISH — Mess"])
 app.include_router(fixr_router,      prefix="/fixr",     tags=["FIXR — Maintenance"])
 app.include_router(herald_router,    prefix="/herald",   tags=["HERALD — Orchestrator"])
-# app.include_router(auth_router,      prefix="/auth",     tags=["Auth"])
