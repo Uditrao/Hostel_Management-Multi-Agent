@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global Reset & Base ─────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #090d16;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Custom Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.5);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.8);
+}
+
+/* ── Glassmorphism Utilities ─────────────────────────────────────────────────── */
+@layer components {
+  .glass {
+    background: rgba(30, 41, 59, 0.70);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-dark {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-light {
+    background: rgba(51, 65, 85, 0.50);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  /* ── Input fields ─────────────────────────────────────────── */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl glass text-slate-200 placeholder-slate-500
+           border border-white/[0.08] focus:outline-none focus:border-violet-500/60
+           focus:ring-2 focus:ring-violet-500/20 transition-all duration-200;
+  }
+
+  /* ── Buttons ──────────────────────────────────────────────── */
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200
+           bg-violet-600 hover:bg-violet-500 shadow-none hover:shadow-glow-violet
+           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold text-slate-300 transition-all duration-200
+           glass hover:bg-white/10 border border-white/10 hover:border-white/20
+           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200
+           bg-rose-600 hover:bg-rose-500 hover:shadow-glow-rose
+           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-emerald {
+    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200
+           bg-emerald-600 hover:bg-emerald-500 hover:shadow-glow-emerald
+           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* ── Cards ────────────────────────────────────────────────── */
+  .card {
+    @apply glass rounded-2xl p-6 shadow-glass animate-fade-in;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-300 hover:bg-slate-700/60 hover:border-white/15 cursor-pointer;
+  }
+
+  /* ── Stat card ────────────────────────────────────────────── */
+  .stat-card {
+    @apply glass rounded-2xl p-5 flex flex-col gap-2 shadow-glass;
+  }
+
+  /* ── Badge / Pill ─────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-violet {
+    @apply badge bg-violet-500/20 text-violet-300 border border-violet-500/30;
+  }
+  .badge-cyan {
+    @apply badge bg-cyan-500/20 text-cyan-300 border border-cyan-500/30;
+  }
+  .badge-emerald {
+    @apply badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30;
+  }
+  .badge-rose {
+    @apply badge bg-rose-500/20 text-rose-300 border border-rose-500/30;
+  }
+  .badge-amber {
+    @apply badge bg-amber-500/20 text-amber-300 border border-amber-500/30;
+  }
+  .badge-slate {
+    @apply badge bg-slate-500/20 text-slate-400 border border-slate-500/30;
+  }
+
+  /* ── Nav Tab ──────────────────────────────────────────────── */
+  .nav-tab {
+    @apply flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400
+           transition-all duration-200 hover:text-slate-200 hover:bg-white/5;
+  }
+  .nav-tab-active {
+    @apply nav-tab text-slate-200 bg-white/[0.08] border border-white/10;
+  }
+
+  /* ── Section label ────────────────────────────────────────── */
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3;
+  }
+
+  /* ── Divider ──────────────────────────────────────────────── */
+  .divider {
+    @apply w-full h-px bg-white/[0.06] my-4;
+  }
+
+  /* ── Page header ──────────────────────────────────────────── */
+  .page-header {
+    @apply text-2xl font-bold text-slate-100 tracking-tight;
+  }
+
+  .page-subheader {
+    @apply text-sm text-slate-500 mt-1;
+  }
+
+  /* ── Status dot ───────────────────────────────────────────── */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  .status-online  { @apply status-dot bg-emerald-400 animate-pulse-slow; }
+  .status-offline { @apply status-dot bg-rose-400; }
+  .status-loading { @apply status-dot bg-amber-400 animate-pulse; }
+}
+
+/* ── Background gradient ─────────────────────────────────────────────────────── */
+.bg-hostel {
+  background: radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 10%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 60% 90%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+              #090d16;
+  min-height: 100vh;
+}
