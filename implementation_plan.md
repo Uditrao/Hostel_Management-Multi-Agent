@@ -204,14 +204,14 @@ backend/llm/
 **Goal**: Student submits complaint → Groq classifies it → structured ticket appears on Warden portal.
 
 **Tasks**:
-- [ ] Build `llm/complaint_classifier.py` — Groq strict JSON schema: `{category, urgency, short_summary}`
-- [ ] Build `agents/fixr/complaints.py` — submit complaint → call Groq → store in `complaints` table
-- [ ] Expose via FastAPI:
-  - `POST /fixr/complaint` — student submits text
+- [x] Build `llm/complaint_classifier.py` — Groq strict JSON schema: `{category, urgency, short_summary}`
+- [x] Build `agents/fixr/complaints.py` — submit complaint → call Groq → store in `complaints` table
+- [x] Expose via FastAPI:
+  - `POST /fixr/complaint` (and `/fixr/complaints`) — student submits text
   - `GET /fixr/complaints/mine` — student views own complaints + status
   - `GET /fixr/complaints` — warden views all complaints (filterable by category/urgency/status)
   - `PATCH /fixr/complaints/{id}` — warden assigns worker note, updates status
-- [ ] Test: submit "my bathroom pipe is leaking badly" → confirm `{plumbing, high, short_summary}` returned; verify it appears on warden view
+- [x] Test: submit "my bathroom pipe is leaking badly" → confirm `{plumbing, high, short_summary}` returned; verify it appears on warden view
 
 **Deliverables**:
 ```
@@ -229,18 +229,18 @@ backend/agents/fixr/
 **Goal**: Nightly cross-agent anomaly detection + Warden dashboard summary.
 
 **Tasks**:
-- [ ] Build `agents/herald/orchestrator.py`:
+- [x] Build `agents/herald/orchestrator.py`:
   - Query `attendance_logs` → students with 0 entries in last 3 days → flag `attendance_missed`
   - Query `mess_entries` → students with 0 entries in last 6 meals → flag `mess_missed_streak`
   - Query `complaints` → `high/critical` open > 24h → flag `unresolved_complaint`
   - Deduplicate: `UNIQUE(student_id, type, DATE)` prevents re-flagging same day
-- [ ] Optional: Groq summarizer → turn all flags into 1 paragraph for Warden dashboard
-- [ ] APScheduler: nightly cron (midnight) + on-demand endpoint
-- [ ] Expose via FastAPI:
+- [x] Optional: Groq summarizer → turn all flags into 1 paragraph for Warden dashboard
+- [x] APScheduler: nightly cron (midnight) + on-demand endpoint
+- [x] Expose via FastAPI:
   - `GET /herald/anomalies` — warden views unread flags
   - `POST /herald/run` — warden triggers on-demand orchestrator run
   - `PATCH /herald/anomalies/{id}/seen` — mark flag as seen
-- [ ] Test: seed DB with missing attendance/mess data → trigger orchestrator → confirm correct flags created
+- [x] Test: seed DB with missing attendance/mess data → trigger orchestrator → confirm correct flags created
 
 **Deliverables**:
 ```

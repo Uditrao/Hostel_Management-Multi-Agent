@@ -66,13 +66,14 @@ def _insert_flag_safe(
     student_id + type + date), the insert is silently skipped.
     Returns the new row dict, or None on duplicate / error.
     """
+    clean_sid = _clean_uuid(student_id)
     payload: Dict[str, Any] = {
         "type":           flag_type,
         "detail":         detail,
         "seen_by_warden": False,
     }
-    if student_id:
-        payload["student_id"] = student_id
+    if clean_sid:
+        payload["student_id"] = clean_sid
 
     try:
         res = client.table("anomaly_flags").insert(payload).execute()
@@ -161,12 +162,18 @@ def _check_mess_missed_streak(client) -> List[Dict[str, Any]]:
         )
         mess_data = mess_res.data or []
 
-        # Distinct (meal_type, date) slots that actually occurred, most recent first
-        slots = sorted(
-            {(row["meal_type"], row["timestamp"][:10]) for row in mess_data},
+        # Distinct (meal_type, date) slots that actually occurred, chronologically newest first
+        _meal_rank = {"breakfast": 1, "lunch": 2, "dinner": 3}
+        distinct_slots = list({
+            (row["meal_type"], row["timestamp"][:10])
+            for row in mess_data
+            if row.get("timestamp") and row.get("meal_type")
+        })
+        distinct_slots.sort(
+            key=lambda slot: (slot[1], _meal_rank.get(slot[0], 0)),
             reverse=True,
         )
-        recent_slots = slots[:MESS_LOOKBACK_MEALS]
+        recent_slots = distinct_slots[:MESS_LOOKBACK_MEALS]
 
         if not recent_slots:
             logger.info("HERALD: No recent mess slots found -- skipping mess streak check.")
