@@ -97,6 +97,12 @@ async def fixr_status():
     summary="Submit a maintenance complaint (Student action)",
     response_description="Created complaint record with LLM classification result",
 )
+@router.post(
+    "/complaints",
+    summary="Submit a maintenance complaint (Student action - plural alias)",
+    response_description="Created complaint record with LLM classification result",
+    include_in_schema=False,
+)
 async def submit_new_complaint(body: ComplaintSubmitRequest):
     """
     Submit a free-text maintenance complaint.

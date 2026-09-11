@@ -143,9 +143,9 @@ Sem5_AI-Project/                     # Git Repository Root
 | **Phase 3A** | **NOURISH** — Mess Entry Gating | ✅ Complete |
 | **Phase 3B** | **NOURISH** — Inventory Depletion & Menu PDF Parsing (Gemini) | ✅ Complete |
 | **Phase 3C** | **NOURISH** — Mess Staff NLP Command Bar (Groq + Gemini fallback) | ✅ Complete |
-| **Phase 4** | **FIXR** — Maintenance Complaint Auto-Triage (Groq) | ⏳ Up Next |
-| **Phase 5** | **HERALD** — Multi-Agent Cross-Check & Anomaly Detection | ⏸️ Pending |
-| **Phase 6** | Supabase Auth Integration & Role Guards | ⏸️ Pending |
+| **Phase 4** | **FIXR** — Maintenance Complaint Auto-Triage (Groq) | ✅ Complete |
+| **Phase 5** | **HERALD** — Multi-Agent Cross-Check & Anomaly Detection | ✅ Complete |
+| **Phase 6** | Supabase Auth Integration & Role Guards | ⏳ Up Next |
 | **Phase 7** | Frontend Portals (Student, Mess Staff, Warden) | ⏸️ Pending |
 | **Phase 8** | Camera Kiosk Deployment & Validation | ⏸️ Pending |
 | **Phase 9** | End-to-End Testing & Production Deploy | ⏸️ Pending |
