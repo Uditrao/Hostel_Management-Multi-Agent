@@ -3,13 +3,15 @@ SENTINEL — FastAPI Router
 ==========================
 Endpoints:
 
-  GET  /sentinel/status           — Agent status & health check
-  POST /sentinel/gate-event       — Process gate identity event from IRIS/kiosk
-  GET  /sentinel/attendance       — Retrieve student attendance history
-  GET  /sentinel/defaulters       — Get defaulters for a specific date (defaults to today)
-  GET  /sentinel/window           — Get active attendance window
-  PUT  /sentinel/window           — Update attendance window (Warden)
-  POST /sentinel/check-defaulters — Run on-demand defaulters evaluation
+  GET  /sentinel/status           — Agent status & health check (public)
+  POST /sentinel/gate-event       — Process gate identity event from IRIS/kiosk [warden | kiosk]
+  GET  /sentinel/attendance       — Retrieve student attendance history [any authenticated]
+  GET  /sentinel/defaulters       — Get defaulters for a specific date [warden]
+  GET  /sentinel/window           — Get active attendance window (public)
+  PUT  /sentinel/window           — Update attendance window [warden]
+  POST /sentinel/check-defaulters — Run on-demand defaulters evaluation [warden]
+
+Phase 6: Role guards applied.
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ import logging
 from datetime import date
 from typing import Optional, List, Dict, Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from agents.sentinel.attendance import (
@@ -32,6 +34,7 @@ from agents.sentinel.scheduler_jobs import (
     run_defaulter_check_job,
     reschedule_cutoff_job,
 )
+from auth.dependencies import get_any_authenticated_user, get_kiosk_or_warden, require_role
 
 logger = logging.getLogger("hostel.sentinel.router")
 
@@ -85,10 +88,13 @@ async def sentinel_status():
 
 @router.post(
     "/gate-event",
-    summary="Process identity event from IRIS/kiosk",
+    summary="Process identity event from IRIS/kiosk [warden | kiosk]",
     response_description="Attendance marking result",
 )
-async def process_gate_event(event: GateEventRequest):
+async def process_gate_event(
+    event: GateEventRequest,
+    _auth: dict = Depends(get_kiosk_or_warden),
+):
     """
     Called by IRIS or the Camera Kiosk after face recognition at the hostel gate.
     - Idempotent: Skips duplicates if the student has already checked in today.
@@ -106,12 +112,13 @@ async def process_gate_event(event: GateEventRequest):
 
 @router.get(
     "/attendance",
-    summary="Get student attendance log",
+    summary="Get student attendance log [any authenticated]",
     response_description="Attendance history records for a student",
 )
 async def get_attendance(
     student_id: str = Query(..., description="UUID of the student"),
     limit: int = Query(50, ge=1, le=200, description="Maximum records to return"),
+    _user: dict = Depends(get_any_authenticated_user),
 ):
     """
     Retrieve attendance logs for a student, ordered newest first.
@@ -122,7 +129,7 @@ async def get_attendance(
 
 @router.get(
     "/defaulters",
-    summary="Get defaulters list (Warden view)",
+    summary="Get defaulters list [warden]",
     response_description="Students who did not mark attendance on the specified date",
 )
 async def get_defaulters_list(
@@ -131,6 +138,7 @@ async def get_defaulters_list(
         pattern=r"^\d{4}-\d{2}-\d{2}$",
         description="Target date in YYYY-MM-DD format (defaults to today)",
     ),
+    _warden: dict = Depends(require_role("warden")),
 ):
     """
     Calculates and returns all enrolled students who missed gate attendance for a given date.
@@ -160,10 +168,13 @@ async def get_window():
 
 @router.put(
     "/window",
-    summary="Update attendance window (Warden action)",
+    summary="Update attendance window [warden]",
     response_description="Updated window configuration",
 )
-async def update_window(window_data: WindowUpdateRequest):
+async def update_window(
+    window_data: WindowUpdateRequest,
+    _warden: dict = Depends(require_role("warden")),
+):
     """
     Update the gate attendance window start time, end time, and active days.
     Also reschedules the automatic daily cutoff job.
@@ -188,10 +199,12 @@ async def update_window(window_data: WindowUpdateRequest):
 
 @router.post(
     "/check-defaulters",
-    summary="Trigger on-demand defaulters evaluation",
+    summary="Trigger on-demand defaulters evaluation [warden]",
     response_description="Immediate execution result of defaulters check",
 )
-async def trigger_defaulters_check():
+async def trigger_defaulters_check(
+    _warden: dict = Depends(require_role("warden")),
+):
     """
     Manually triggers the defaulter evaluation job immediately (useful for testing & Warden dashboard).
     """

@@ -3,13 +3,15 @@ IRIS — FastAPI Router
 =====================
 Endpoints:
 
-  GET  /iris/status       — Agent health check
-  POST /iris/enroll       — Enroll a student's face (image upload OR webcam)
-  POST /iris/recognize    — Recognize a face and return an identity event
+  GET  /iris/status       — Agent health check (public)
+  POST /iris/enroll       — Enroll a student's face [warden | kiosk]
+  POST /iris/recognize    — Recognize a face and return an identity event [warden | kiosk]
 
 Both /enroll and /recognize support two modes:
   • mode=upload   → send image file as multipart/form-data
   • mode=webcam   → server captures from the local camera (use when running on kiosk)
+
+Phase 6: Role guards applied — warden or kiosk only for enrollment and recognition.
 """
 
 from __future__ import annotations
@@ -19,11 +21,12 @@ from io import BytesIO
 
 import cv2
 import numpy as np
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from PIL import Image
 
 from agents.iris.enrollment import enroll_from_image, enroll_from_webcam
 from agents.iris.recognition import recognize_from_image, recognize_from_webcam
+from auth.dependencies import get_kiosk_or_warden
 
 logger = logging.getLogger("hostel.iris.router")
 
@@ -57,10 +60,11 @@ async def iris_status():
 
 @router.post(
     "/enroll",
-    summary="Enroll a student's face",
+    summary="Enroll a student's face [warden | kiosk]",
     response_description="Enrollment result with success status",
 )
 async def enroll_student(
+    _auth: dict = Depends(get_kiosk_or_warden),
     student_id: str = Form(
         ...,
         description="UUID of the student row in Supabase (must be approved by warden first)",
@@ -116,10 +120,11 @@ async def enroll_student(
 
 @router.post(
     "/recognize",
-    summary="Recognize a face — returns an identity event",
+    summary="Recognize a face — returns an identity event [warden | kiosk]",
     response_description="Identity event: {recognized, student_id, confidence, location}",
 )
 async def recognize_face(
+    _auth: dict = Depends(get_kiosk_or_warden),
     location: str = Form(
         "gate",
         description="'gate' (forwards to SENTINEL) or 'mess' (forwards to NOURISH)",

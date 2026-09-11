@@ -3,13 +3,15 @@ FIXR — FastAPI Router (Phase 4)
 ================================
 Endpoints:
 
-  GET  /fixr/status                 — Agent health check & stats summary
-  POST /fixr/complaint              — Student submits a maintenance complaint
-  GET  /fixr/complaints/mine        — Student views own complaints + status tracker
-  GET  /fixr/complaints             — Warden views all complaints (filterable & sortable)
-  GET  /fixr/complaints/summary     — Quick aggregate counts for dashboard widgets
-  GET  /fixr/complaints/{id}        — Fetch a single complaint by UUID
-  PATCH /fixr/complaints/{id}       — Warden assigns worker note, updates status
+  GET  /fixr/status                 — Agent health check & stats summary (public)
+  POST /fixr/complaint              — Student submits a maintenance complaint [student | warden]
+  GET  /fixr/complaints/mine        — Student views own complaints [student | warden]
+  GET  /fixr/complaints             — Warden views all complaints [warden]
+  GET  /fixr/complaints/summary     — Quick aggregate counts [warden]
+  GET  /fixr/complaints/{id}        — Fetch a single complaint by UUID [warden]
+  PATCH /fixr/complaints/{id}       — Warden assigns worker note, updates status [warden]
+
+Phase 6: Role guards applied.
 """
 
 from __future__ import annotations
@@ -17,7 +19,7 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 
 from agents.fixr.complaints import (
@@ -31,6 +33,7 @@ from agents.fixr.complaints import (
     VALID_CATEGORIES,
     VALID_URGENCIES,
 )
+from auth.dependencies import require_role
 
 logger = logging.getLogger("hostel.fixr.router")
 
@@ -94,16 +97,19 @@ async def fixr_status():
 
 @router.post(
     "/complaint",
-    summary="Submit a maintenance complaint (Student action)",
+    summary="Submit a maintenance complaint [student | warden]",
     response_description="Created complaint record with LLM classification result",
 )
 @router.post(
     "/complaints",
-    summary="Submit a maintenance complaint (Student action - plural alias)",
+    summary="Submit a maintenance complaint [student | warden] (plural alias)",
     response_description="Created complaint record with LLM classification result",
     include_in_schema=False,
 )
-async def submit_new_complaint(body: ComplaintSubmitRequest):
+async def submit_new_complaint(
+    body: ComplaintSubmitRequest,
+    _auth: dict = Depends(require_role("student", "warden")),
+):
     """
     Submit a free-text maintenance complaint.
 
@@ -128,7 +134,7 @@ async def submit_new_complaint(body: ComplaintSubmitRequest):
 
 @router.get(
     "/complaints/mine",
-    summary="Get student's own complaints & status tracker",
+    summary="Get student's own complaints & status tracker [student | warden]",
     response_description="All complaints submitted by the specified student",
 )
 async def get_student_complaints(
@@ -142,6 +148,7 @@ async def get_student_complaints(
     ),
     limit: int = Query(50, ge=1, le=100, description="Max complaints to return"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
+    _auth: dict = Depends(require_role("student", "warden")),
 ):
     """
     Returns all complaints submitted by the specified student, sorted newest first.
@@ -168,10 +175,12 @@ async def get_student_complaints(
 
 @router.get(
     "/complaints/summary",
-    summary="Aggregate complaint counts for dashboard widgets (Warden)",
+    summary="Aggregate complaint counts for dashboard widgets [warden]",
     response_description="Counts grouped by status, urgency, and category",
 )
-async def complaints_summary():
+async def complaints_summary(
+    _warden: dict = Depends(require_role("warden")),
+):
     """
     Returns aggregate statistics over the entire `complaints` table.
     Designed for the Warden dashboard summary cards and HERALD anomaly feed.
@@ -186,7 +195,7 @@ async def complaints_summary():
 
 @router.get(
     "/complaints",
-    summary="Get all complaints — filterable & sortable (Warden view)",
+    summary="Get all complaints — filterable & sortable [warden]",
     response_description="Complaint records with student info, sorted by urgency then date",
 )
 async def get_complaints(
@@ -204,6 +213,7 @@ async def get_complaints(
     ),
     limit: int = Query(50, ge=1, le=200, description="Max complaints to return"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
+    _warden: dict = Depends(require_role("warden")),
 ):
     """
     Warden view of all complaints. Results are sorted by urgency (critical first),
@@ -246,7 +256,7 @@ async def get_complaints(
 
 @router.get(
     "/complaints/{complaint_id}",
-    summary="Get a single complaint by UUID",
+    summary="Get a single complaint by UUID [warden]",
     response_description="Full complaint record with embedded student information",
 )
 async def get_complaint(
@@ -254,6 +264,7 @@ async def get_complaint(
         ...,
         description="UUID of the complaint",
     ),
+    _warden: dict = Depends(require_role("warden")),
 ):
     """
     Fetch a specific complaint record by its UUID, including the embedded
@@ -270,7 +281,7 @@ async def get_complaint(
 
 @router.patch(
     "/complaints/{complaint_id}",
-    summary="Update complaint status or assign worker (Warden action)",
+    summary="Update complaint status or assign worker [warden]",
     response_description="Updated complaint record",
 )
 async def patch_complaint(
@@ -279,6 +290,7 @@ async def patch_complaint(
         ...,
         description="UUID of the complaint to update",
     ),
+    _warden: dict = Depends(require_role("warden")),
 ):
     """
     Update a complaint record. Warden can:

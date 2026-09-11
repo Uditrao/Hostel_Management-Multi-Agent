@@ -40,10 +40,20 @@ from agents.sentinel.attendance import (
     IST_TZ,
 )
 from agents.sentinel.router import router as sentinel_router
+from auth.dependencies import get_current_user, get_kiosk_or_warden
 from fastapi import FastAPI
 
 test_app = FastAPI()
 test_app.include_router(sentinel_router, prefix="/sentinel")
+test_app.dependency_overrides[get_current_user] = lambda: {
+    "sub": "warden-uuid",
+    "email": "warden@hostel.com",
+    "user_metadata": {"role": "warden"},
+}
+test_app.dependency_overrides[get_kiosk_or_warden] = lambda: {
+    "sub": "kiosk",
+    "user_metadata": {"role": "kiosk"},
+}
 client = TestClient(test_app)
 
 
