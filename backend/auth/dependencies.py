@@ -147,6 +147,40 @@ async def get_kiosk_or_warden(
     return payload
 
 
+# ── Enrollment Auth (Warden, Kiosk, or Student) ──────────────────────────────
+
+async def get_enrollment_auth(
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer_scheme),
+    api_key: Optional[str] = Security(_api_key_header),
+) -> dict:
+    """
+    Dependency for face enrollment endpoints:
+    - Kiosk via X-API-Key or JWT
+    - Warden via JWT
+    - Student via JWT (caller must verify student only enrolls their own ID)
+    """
+    expected_api_key = os.getenv("KIOSK_API_KEY")
+    if api_key and expected_api_key and api_key == expected_api_key:
+        logger.debug("Kiosk authenticated for enrollment via X-API-Key.")
+        return {"sub": "kiosk", "email": None, "user_metadata": {"role": "kiosk"}}
+
+    if credentials is None or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required: provide a Bearer JWT or X-API-Key header.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    payload = verify_supabase_jwt(credentials.credentials)
+    role = extract_role(payload)
+    if role not in ("warden", "kiosk", "student"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied. Required role: student, warden, or kiosk. Your role: '{role or 'unknown'}'.",
+        )
+    return payload
+
+
 # ── Any Authenticated User ─────────────────────────────────────────────────────
 
 async def get_any_authenticated_user(
@@ -157,3 +191,4 @@ async def get_any_authenticated_user(
     Just verifies the JWT is valid — does not enforce a specific role.
     """
     return user
+
