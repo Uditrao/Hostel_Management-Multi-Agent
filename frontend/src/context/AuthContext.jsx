@@ -48,13 +48,44 @@ function getRoleHomePath(role) {
 export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [role,    setRole]    = useState(null)
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/auth/me`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(await (async () => {
+              const { data: { session } } = await supabase.auth.getSession()
+              return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
+            })()),
+          },
+        }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setProfile(data)
+        return data
+      }
+    } catch {
+      // Backend maybe offline
+    }
+    return null
+  }, [])
 
   // Sync state from Supabase session
   function syncFromSession(session) {
     const u = session?.user ?? null
     setUser(u)
     setRole(extractRole(u))
+    if (u) {
+      fetchProfile()
+    } else {
+      setProfile(null)
+    }
   }
 
   useEffect(() => {
@@ -73,7 +104,7 @@ export function AuthProvider({ children }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [fetchProfile])
 
   // ── Login ──────────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
@@ -88,39 +119,36 @@ export function AuthProvider({ children }) {
 
   // ── Signup (student self-registration) ─────────────────────────────────────
   const signup = useCallback(async ({ email, password, full_name, roll_no, room_no }) => {
-    // 1. Create Supabase auth user with role in metadata
-    const { data, error: signupError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { role: 'student', full_name, roll_no, room_no },
-      },
-    })
-    if (signupError) return { error: signupError }
-
-    // 2. Post to backend /auth/signup to create users row (pending approval)
     try {
-      const token = data.session?.access_token
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/auth/signup`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ email, password, full_name, roll_no, room_no, role: 'student' }),
+          body: JSON.stringify({
+            email,
+            password,
+            full_name,
+            roll_no,
+            room_no,
+            role: 'student',
+          }),
         }
       )
+      const data = await res.json()
       if (!res.ok) {
-        const body = await res.json()
-        return { error: { message: body.detail ?? 'Signup failed' } }
+        return { error: { message: data.detail || 'Signup failed. Please try again.' } }
       }
-    } catch (_e) {
-      return { error: { message: 'Backend unreachable. Try again later.' } }
+      return { data, error: null }
+    } catch {
+      return {
+        error: {
+          message: 'Unable to connect to backend server. Please verify FastAPI is running on http://127.0.0.1:8000.',
+        },
+      }
     }
-
-    return { error: null }
   }, [])
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -129,6 +157,9 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     role,
+    profile,
+    studentProfile: profile?.student_profile ?? null,
+    refreshProfile: fetchProfile,
     loading,
     isAuthenticated: !!user,
     login,

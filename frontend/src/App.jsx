@@ -36,6 +36,9 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 import StudentDashboard from './pages/student/StudentDashboard'
+import FaceEnrollmentPage from './pages/student/FaceEnrollmentPage'
+import AttendancePage from './pages/student/AttendancePage'
+import ComplaintsPage from './pages/student/ComplaintsPage'
 import MessDashboard from './pages/mess/MessDashboard'
 import WardenDashboard from './pages/warden/WardenDashboard'
 
@@ -60,45 +63,9 @@ export default function App() {
               <Route element={<StudentLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<StudentDashboard />} />
-                <Route
-                  path="enroll"
-                  element={
-                    <PlaceholderView
-                      title="Face Biometric Enrollment"
-                      subtitle="Capture webcam frames to train your MobileFaceNet embedding vector"
-                      agentName="IRIS"
-                      phase="Phase 7B"
-                      icon={Camera}
-                      accentColor="cyan"
-                    />
-                  }
-                />
-                <Route
-                  path="attendance"
-                  element={
-                    <PlaceholderView
-                      title="Personal Attendance History"
-                      subtitle="View your daily gate scans, entry timestamps, and curfew compliance"
-                      agentName="SENTINEL"
-                      phase="Phase 7B"
-                      icon={CalendarCheck}
-                      accentColor="cyan"
-                    />
-                  }
-                />
-                <Route
-                  path="complaints"
-                  element={
-                    <PlaceholderView
-                      title="Submit & Track Complaints"
-                      subtitle="Report hostel issues automatically classified & triaged by Groq LLM"
-                      agentName="FIXR"
-                      phase="Phase 7B"
-                      icon={Wrench}
-                      accentColor="rose"
-                    />
-                  }
-                />
+                <Route path="enroll" element={<FaceEnrollmentPage />} />
+                <Route path="attendance" element={<AttendancePage />} />
+                <Route path="complaints" element={<ComplaintsPage />} />
               </Route>
             </Route>
 

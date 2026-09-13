@@ -58,5 +58,46 @@ api.interceptors.response.use(
 
 export default api
 
-// ── Convenience health check ───────────────────────────────────────────────────
+// ── Convenience API Services ───────────────────────────────────────────────────
+
 export const checkHealth = () => api.get('/health')
+
+export const authApi = {
+  getMe: () => api.get('/auth/me'),
+}
+
+export const irisApi = {
+  getStatus: () => api.get('/iris/status'),
+  enroll: (formData) =>
+    api.post('/iris/enroll', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+}
+
+export const sentinelApi = {
+  getStatus: () => api.get('/sentinel/status'),
+  getWindow: () => api.get('/sentinel/window'),
+  getAttendance: (studentId, limit = 50) =>
+    api.get('/sentinel/attendance', {
+      params: { student_id: studentId, limit },
+    }),
+}
+
+export const fixrApi = {
+  getStatus: () => api.get('/fixr/status'),
+  submitComplaint: (studentId, rawText) =>
+    api.post('/fixr/complaint', {
+      student_id: studentId,
+      raw_text: rawText,
+    }),
+  getMyComplaints: (studentId, status = null, limit = 50, offset = 0) =>
+    api.get('/fixr/complaints/mine', {
+      params: {
+        student_id: studentId,
+        ...(status ? { status } : {}),
+        limit,
+        offset,
+      },
+    }),
+}
+

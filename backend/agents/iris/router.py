@@ -26,7 +26,8 @@ from PIL import Image
 
 from agents.iris.enrollment import enroll_from_image, enroll_from_webcam
 from agents.iris.recognition import recognize_from_image, recognize_from_webcam
-from auth.dependencies import get_kiosk_or_warden
+from auth.dependencies import get_kiosk_or_warden, get_enrollment_auth
+from auth.jwt_handler import extract_role, extract_user_id
 
 logger = logging.getLogger("hostel.iris.router")
 
@@ -60,11 +61,11 @@ async def iris_status():
 
 @router.post(
     "/enroll",
-    summary="Enroll a student's face [warden | kiosk]",
+    summary="Enroll a student's face [warden | kiosk | student self-enrollment]",
     response_description="Enrollment result with success status",
 )
 async def enroll_student(
-    _auth: dict = Depends(get_kiosk_or_warden),
+    _auth: dict = Depends(get_enrollment_auth),
     student_id: str = Form(
         ...,
         description="UUID of the student row in Supabase (must be approved by warden first)",
@@ -81,13 +82,19 @@ async def enroll_student(
     """
     Enroll a student's face embedding into the database.
 
-    **mode=upload**: Attach a clear, front-facing photo (JPG/PNG). Best for initial setup.
+    **mode=upload**: Attach a clear, front-facing photo (JPG/PNG). Best for initial setup and web apps.
 
-    **mode=webcam**: The server captures 5 frames from the laptop camera.
-    Use this from the kiosk machine or during demo.
+    **mode=webcam**: The server captures 5 frames from the local camera (kiosk machine).
 
-    The student row must already exist in Supabase (created when warden approves sign-up).
+    Students are authorized to self-enroll their own profile.
     """
+    caller_role = extract_role(_auth)
+    caller_uid = extract_user_id(_auth)
+    if caller_role == "student" and caller_uid != student_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Students can only enroll their own face biometric profile.",
+        )
     if mode == "upload":
         if image is None:
             raise HTTPException(

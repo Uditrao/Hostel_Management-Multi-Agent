@@ -92,6 +92,8 @@ async def signup(body: SignupRequest):
             "user_metadata": {
                 "role": body.role,
                 "full_name": body.full_name,
+                "roll_no": body.roll_no,
+                "room_no": body.room_no,
             },
             "email_confirm": True,   # auto-confirm for hostel system (no email OTP needed)
         })
@@ -230,14 +232,38 @@ async def get_me(current_user: dict = Depends(get_any_authenticated_user)):
         logger.warning("Could not fetch users row for %s: %s", user_id, exc)
         profile = {}
 
+    # If role is student, fetch additional details from students table
+    student_profile = None
+    if role == "student":
+        try:
+            s_row = (
+                db.table("students")
+                .select("roll_no, room_no, photo_url, enrolled_at, face_embedding")
+                .eq("id", user_id)
+                .maybe_single()
+                .execute()
+            )
+            if s_row.data:
+                sd = s_row.data
+                student_profile = {
+                    "roll_no": sd.get("roll_no"),
+                    "room_no": sd.get("room_no"),
+                    "photo_url": sd.get("photo_url"),
+                    "enrolled_at": sd.get("enrolled_at"),
+                    "is_face_enrolled": bool(sd.get("face_embedding") or sd.get("enrolled_at")),
+                }
+        except Exception as exc:
+            logger.warning("Could not fetch students record for %s: %s", user_id, exc)
+
     return {
-        "success":   True,
-        "user_id":   user_id,
-        "email":     email,
-        "role":      role,
-        "full_name": profile.get("full_name"),
-        "status":    profile.get("status"),
-        "created_at": profile.get("created_at"),
+        "success":         True,
+        "user_id":         user_id,
+        "email":           email,
+        "role":            role,
+        "full_name":       profile.get("full_name"),
+        "status":          profile.get("status"),
+        "created_at":      profile.get("created_at"),
+        "student_profile": student_profile,
     }
 
 
@@ -320,7 +346,17 @@ async def approve_user(
     # For students: create the students row
     students_row = None
     if user_data["role"] == "student":
-        if not body.roll_no or not body.room_no:
+        roll = body.roll_no
+        room = body.room_no
+        if not roll or not room:
+            try:
+                auth_user = db.auth.admin.get_user_by_id(user_id)
+                meta = (auth_user.user.user_metadata if auth_user and auth_user.user else {}) or {}
+                roll = roll or meta.get("roll_no")
+                room = room or meta.get("room_no")
+            except Exception as e:
+                logger.warning("Could not fetch user_metadata during approval: %s", e)
+        if not roll or not room:
             raise HTTPException(
                 status_code=400,
                 detail="roll_no and room_no are required when approving a student.",
@@ -330,8 +366,8 @@ async def approve_user(
                 "id":        user_id,
                 "name":      user_data.get("full_name", ""),
                 "email":     user_data.get("email", ""),
-                "roll_no":   body.roll_no,
-                "room_no":   body.room_no,
+                "roll_no":   roll,
+                "room_no":   room,
                 "is_active": True,
             }).execute()
             students_row = stu_resp.data[0] if stu_resp.data else None
