@@ -36,12 +36,29 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("⚠️  Supabase connection FAILED — check your .env keys.")
 
+    # Warm up IRIS face engine in background thread (TF Facenet512 ~10s cold-start)
+    try:
+        import threading
+        import numpy as np
+        def _warmup_iris():
+            try:
+                from agents.iris.face_engine import get_embedding
+                dummy = np.zeros((224, 224, 3), dtype=np.uint8)
+                get_embedding(dummy)
+                logger.info("IRIS: Facenet512 model warmed up and ready.")
+            except Exception as exc:
+                logger.warning("IRIS: warm-up skipped — %s", exc)
+        threading.Thread(target=_warmup_iris, daemon=True).start()
+        logger.info("IRIS: warming up face engine in background ...")
+    except Exception as exc:
+        logger.warning("Could not start IRIS warm-up thread: %s", exc)
+
     # Start all background schedulers (SENTINEL + HERALD)
     try:
         from scheduler.jobs import start_all_schedulers
         start_all_schedulers()
     except Exception as exc:
-        logger.warning("⚠️  Could not start schedulers: %s", exc)
+        logger.warning("Could not start schedulers: %s", exc)
 
     yield
 
@@ -52,7 +69,7 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
 
-    logger.info("🛑 Hostel Management System shutting down.")
+    logger.info("Hostel Management System shutting down.")
 
 
 # ─── App ──────────────────────────────────────────────────────────────────────
