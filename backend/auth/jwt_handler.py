@@ -28,49 +28,41 @@ except ImportError:  # pragma: no cover
     logger.warning("python-jose not installed — JWT verification is DISABLED.")
 
 
+from pathlib import Path
+from dotenv import load_dotenv
+
 # ── Algorithm constant ─────────────────────────────────────────────────────────
 _ALGORITHM = "HS256"
 
 
-def _get_jwt_secret() -> str:
-    """Return the Supabase JWT secret from environment, raising on missing."""
+def _get_jwt_secret() -> Optional[str]:
+    """Return the Supabase JWT secret from environment, reloading .env if needed."""
     secret = os.getenv("SUPABASE_JWT_SECRET")
-    if not secret:
-        raise RuntimeError(
-            "SUPABASE_JWT_SECRET is not set in .env. "
-            "Find it at: Supabase Dashboard → Project Settings → API → JWT Settings."
-        )
-    return secret
+    if not secret or secret == "your_jwt_secret_here":
+        env_path = Path(__file__).resolve().parent.parent / ".env"
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path, override=True)
+            secret = os.getenv("SUPABASE_JWT_SECRET")
+    if secret and secret != "your_jwt_secret_here":
+        return secret
+    return None
 
 
 def verify_supabase_jwt(token: str) -> dict:
     """
     Decode and verify a Supabase JWT.
+    First attempts fast local HS256 decode if SUPABASE_JWT_SECRET is valid.
+    Falls back to Supabase auth client verification to guarantee reliability.
 
     Args:
         token: Raw JWT string (without 'Bearer ' prefix).
 
     Returns:
-        Decoded payload dict, e.g.:
-        {
-          "sub": "<user_uuid>",
-          "email": "...",
-          "role": "authenticated",
-          "user_metadata": {"role": "warden", ...},
-          "exp": ...,
-          ...
-        }
+        Decoded payload dict containing sub, email, user_metadata, and role.
 
     Raises:
         HTTPException 401 — token missing, expired, or invalid.
-        HTTPException 503 — jose library not installed (server config error).
     """
-    if not _JOSE_AVAILABLE:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Auth service unavailable: python-jose not installed on server.",
-        )
-
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,37 +70,54 @@ def verify_supabase_jwt(token: str) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    try:
-        secret = _get_jwt_secret()
-    except RuntimeError as exc:
-        logger.error("JWT secret missing: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Auth service misconfigured — SUPABASE_JWT_SECRET not set.",
-        )
+    # 1. Fast local verification if secret is available and jose is installed
+    secret = _get_jwt_secret()
+    if secret and _JOSE_AVAILABLE:
+        try:
+            payload = jwt.decode(
+                token,
+                secret,
+                algorithms=[_ALGORITHM],
+                options={"verify_aud": False},
+            )
+            return payload
+        except ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired. Please log in again.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        except JWTError:
+            # Fall through to Supabase client verification
+            logger.debug("Local JWT signature check failed; falling back to Supabase client verification")
 
+    # 2. Remote / client verification via Supabase API (works with all token formats)
     try:
-        payload = jwt.decode(
-            token,
-            secret,
-            algorithms=[_ALGORITHM],
-            options={"verify_aud": False},   # Supabase does not include 'aud' in user JWTs
-        )
-        return payload
-
-    except ExpiredSignatureError:
+        from db.supabase_client import get_client
+        client = get_client()
+        user_resp = client.auth.get_user(token)
+        if user_resp and getattr(user_resp, "user", None):
+            u = user_resp.user
+            return {
+                "sub": str(u.id),
+                "email": getattr(u, "email", None),
+                "role": getattr(u, "role", "authenticated") or "authenticated",
+                "user_metadata": getattr(u, "user_metadata", {}) or {},
+                "app_metadata": getattr(u, "app_metadata", {}) or {},
+            }
+    except Exception as exc:
+        logger.warning("Supabase auth verification failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired. Please log in again.",
+            detail="Invalid authentication token. Please log in again.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except JWTError as exc:
-        logger.warning("JWT validation failed: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication token.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 def extract_role(payload: dict) -> Optional[str]:

@@ -40,6 +40,9 @@ import FaceEnrollmentPage from './pages/student/FaceEnrollmentPage'
 import AttendancePage from './pages/student/AttendancePage'
 import ComplaintsPage from './pages/student/ComplaintsPage'
 import MessDashboard from './pages/mess/MessDashboard'
+import InventoryPage from './pages/mess/InventoryPage'
+import MenuUploadPage from './pages/mess/MenuUploadPage'
+import NlpCommandPage from './pages/mess/NlpCommandPage'
 import WardenDashboard from './pages/warden/WardenDashboard'
 
 export default function App() {
@@ -77,45 +80,9 @@ export default function App() {
               <Route element={<MessLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<MessDashboard />} />
-                <Route
-                  path="inventory"
-                  element={
-                    <PlaceholderView
-                      title="Mess Stock & Inventory"
-                      subtitle="Live ingredients inventory, stock status, and low-level alerts"
-                      agentName="NOURISH"
-                      phase="Phase 7C"
-                      icon={Package}
-                      accentColor="amber"
-                    />
-                  }
-                />
-                <Route
-                  path="menu"
-                  element={
-                    <PlaceholderView
-                      title="Weekly Mess Menu Upload"
-                      subtitle="Upload menu PDF for automated Gemini multimodal parsing"
-                      agentName="NOURISH"
-                      phase="Phase 7C"
-                      icon={BookOpen}
-                      accentColor="amber"
-                    />
-                  }
-                />
-                <Route
-                  path="command"
-                  element={
-                    <PlaceholderView
-                      title="NLP Inventory Command Bar"
-                      subtitle="Natural language voice and text input parsed into SQL stock actions"
-                      agentName="NOURISH"
-                      phase="Phase 7C"
-                      icon={Terminal}
-                      accentColor="amber"
-                    />
-                  }
-                />
+                <Route path="inventory" element={<InventoryPage />} />
+                <Route path="menu" element={<MenuUploadPage />} />
+                <Route path="command" element={<NlpCommandPage />} />
               </Route>
             </Route>
 

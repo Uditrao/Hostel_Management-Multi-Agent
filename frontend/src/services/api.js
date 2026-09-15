@@ -12,7 +12,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 30000,  // 30s default — enough for most API calls
   headers: {
     'Content-Type': 'application/json',
   },
@@ -68,9 +68,11 @@ export const authApi = {
 
 export const irisApi = {
   getStatus: () => api.get('/iris/status'),
+  // 90s timeout: Facenet512 TF model cold-start takes ~10s on first request
   enroll: (formData) =>
     api.post('/iris/enroll', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
     }),
 }
 
@@ -100,4 +102,63 @@ export const fixrApi = {
       },
     }),
 }
+
+export const nourishApi = {
+  getStatus: () => api.get('/nourish/status'),
+  getEntries: (targetDate = null) =>
+    api.get('/nourish/entries', {
+      params: targetDate ? { target_date: targetDate } : {},
+    }),
+  getMealEntries: (mealType, targetDate = null, limit = 100, offset = 0) =>
+    api.get(`/nourish/entries/${mealType}`, {
+      params: {
+        ...(targetDate ? { target_date: targetDate } : {}),
+        limit,
+        offset,
+      },
+    }),
+  getMealWindows: () => api.get('/nourish/meal-windows'),
+  getInventory: () => api.get('/nourish/inventory'),
+  updateStock: ({ item_name, action, quantity, unit, updated_by = null }) =>
+    api.post('/nourish/inventory/update', {
+      item_name,
+      action,
+      quantity: Number(quantity),
+      unit,
+      updated_by,
+    }),
+  getAlerts: (urgency = null) =>
+    api.get('/nourish/inventory/alerts', {
+      params: urgency ? { urgency } : {},
+    }),
+  resolveAlert: (alertId) =>
+    api.post(`/nourish/inventory/alerts/${alertId}/resolve`),
+  runDepletion: (mealType, targetDate = null) =>
+    api.post('/nourish/depletion', {
+      meal_type: mealType,
+      target_date: targetDate,
+    }),
+  uploadMenuPdf: (formData) =>
+    api.post('/nourish/menu/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  saveConfirmedMenu: (payload) =>
+    api.post('/nourish/menu/save', payload),
+  getCurrentMenu: (mealType, targetDate = null) =>
+    api.get(`/nourish/menu/${mealType}`, {
+      params: targetDate ? { target_date: targetDate } : {},
+    }),
+  listMenus: (limit = 20, offset = 0) =>
+    api.get('/nourish/menus', { params: { limit, offset } }),
+  executeCommand: (command, staffId = null) =>
+    api.post('/nourish/inventory/command', {
+      command,
+      staff_id: staffId,
+    }),
+  getCommandLogs: (limit = 20, offset = 0) =>
+    api.get('/nourish/inventory/command-logs', {
+      params: { limit, offset },
+    }),
+}
+
 
