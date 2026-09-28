@@ -1,34 +1,17 @@
 /**
  * App.jsx
  * =======
- * Main Application Routing and Context Container for Phase 7A.
- * Provides:
- *   - Supabase AuthProvider
- *   - React Router BrowserRouter
- *   - Public Landing, Login, Signup, and 403 pages
- *   - Protected layouts for Student, Mess Staff, and Warden portals
- *   - Placeholder views for sub-routes awaiting Phase 7B/7C/7D implementation
+ * Main Application Routing — Phase 7D Complete.
+ * All role portals (Student, Mess, Warden) are fully wired to live backend agents.
  */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import {
-  Camera,
-  CalendarCheck,
-  Wrench,
-  Package,
-  BookOpen,
-  Terminal,
-  Users,
-  AlertTriangle,
-  UserCheck
-} from 'lucide-react'
-
 import { AuthProvider } from './context/AuthContext'
+
 import ProtectedRoute from './components/common/ProtectedRoute'
 import RootLayout from './components/layouts/RootLayout'
 import StudentLayout from './components/layouts/StudentLayout'
 import MessLayout from './components/layouts/MessLayout'
 import WardenLayout from './components/layouts/WardenLayout'
-import PlaceholderView from './components/common/PlaceholderView'
 
 // Pages
 import HomePage from './pages/HomePage'
@@ -43,7 +26,12 @@ import MessDashboard from './pages/mess/MessDashboard'
 import InventoryPage from './pages/mess/InventoryPage'
 import MenuUploadPage from './pages/mess/MenuUploadPage'
 import NlpCommandPage from './pages/mess/NlpCommandPage'
-import WardenDashboard from './pages/warden/WardenDashboard'
+import WardenDashboard        from './pages/warden/WardenDashboard'
+import GateKioskPage          from './pages/warden/GateKioskPage'
+import ApprovalsPage         from './pages/warden/ApprovalsPage'
+import DefaultersPage        from './pages/warden/DefaultersPage'
+import WardenComplaintsPage  from './pages/warden/WardenComplaintsPage'
+import AnomaliesPage         from './pages/warden/AnomaliesPage'
 
 export default function App() {
   return (
@@ -93,59 +81,12 @@ export default function App() {
             >
               <Route element={<WardenLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<WardenDashboard />} />
-                <Route
-                  path="defaulters"
-                  element={
-                    <PlaceholderView
-                      title="Hostel Defaulters Roster"
-                      subtitle="Students who missed gate curfew or failed attendance windows"
-                      agentName="SENTINEL"
-                      phase="Phase 7D"
-                      icon={Users}
-                      accentColor="amber"
-                    />
-                  }
-                />
-                <Route
-                  path="complaints"
-                  element={
-                    <PlaceholderView
-                      title="Maintenance Ticket Management"
-                      subtitle="Review, triage, and resolve student complaints prioritized by FIXR"
-                      agentName="FIXR"
-                      phase="Phase 7D"
-                      icon={Wrench}
-                      accentColor="rose"
-                    />
-                  }
-                />
-                <Route
-                  path="anomalies"
-                  element={
-                    <PlaceholderView
-                      title="HERALD Cross-Agent Anomaly Stream"
-                      subtitle="Autonomous anomaly correlation for student well-being and security"
-                      agentName="HERALD"
-                      phase="Phase 7D"
-                      icon={AlertTriangle}
-                      accentColor="violet"
-                    />
-                  }
-                />
-                <Route
-                  path="approvals"
-                  element={
-                    <PlaceholderView
-                      title="Student Registration Approvals"
-                      subtitle="Approve student accounts, assign roll numbers, and assign room slots"
-                      agentName="ADMIN"
-                      phase="Phase 7D"
-                      icon={UserCheck}
-                      accentColor="cyan"
-                    />
-                  }
-                />
+                <Route path="dashboard"  element={<WardenDashboard />} />
+                <Route path="kiosk"      element={<GateKioskPage />} />
+                <Route path="approvals"  element={<ApprovalsPage />} />
+                <Route path="defaulters" element={<DefaultersPage />} />
+                <Route path="complaints" element={<WardenComplaintsPage />} />
+                <Route path="anomalies"  element={<AnomaliesPage />} />
               </Route>
             </Route>
           </Route>

@@ -105,6 +105,30 @@ export default function StudentDashboard() {
 
   return (
     <div className="animate-fade-in space-y-8 pb-12">
+      {/* Pending Warden Approval Notice */}
+      {(profile?.status === 'pending' || !studentProfile) && (
+        <div className="card p-5 border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-amber-200">Registration Pending Warden Approval</h3>
+              <p className="text-xs text-amber-300/80 mt-1 max-w-xl">
+                Your student profile is currently in the verification queue. Once the warden verifies and approves your room allocation, face biometrics enrollment and full hostel services will be enabled.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => refreshProfile && refreshProfile()}
+            className="btn-secondary text-xs flex items-center gap-1.5 shrink-0 self-end sm:self-center"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Check Status
+          </button>
+        </div>
+      )}
+
       {/* Welcome Hero Banner */}
       <div className="card relative overflow-hidden p-6 sm:p-8 border border-cyan-500/20 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-950">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">

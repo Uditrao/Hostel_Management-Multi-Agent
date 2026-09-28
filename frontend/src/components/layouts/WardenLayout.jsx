@@ -5,16 +5,17 @@
  */
 import { NavLink, Outlet } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, Wrench, AlertTriangle, UserCheck
+  LayoutDashboard, DoorOpen, Users, Wrench, AlertTriangle, UserCheck
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const tabs = [
   { to: '/warden/dashboard',   icon: LayoutDashboard, label: 'Dashboard'     },
+  { to: '/warden/kiosk',       icon: DoorOpen,        label: 'Gate Scanner'  },
+  { to: '/warden/approvals',   icon: UserCheck,        label: 'Approvals'     },
   { to: '/warden/defaulters',  icon: Users,            label: 'Defaulters'    },
   { to: '/warden/complaints',  icon: Wrench,           label: 'Complaints'    },
   { to: '/warden/anomalies',   icon: AlertTriangle,    label: 'HERALD Flags'  },
-  { to: '/warden/approvals',   icon: UserCheck,        label: 'Approvals'     },
 ]
 
 export default function WardenLayout() {
