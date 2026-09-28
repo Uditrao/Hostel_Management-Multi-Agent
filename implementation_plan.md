@@ -258,13 +258,13 @@ backend/scheduler/
 **Goal**: Supabase Auth integration; JWT verification middleware; role-based route guards.
 
 **Tasks**:
-- [ ] Build `auth/middleware.py` — verify Supabase JWT on every protected route, extract role
-- [ ] Build role decorators: `@require_role('student')`, `@require_role('warden')`, etc.
-- [ ] Apply role guards to all existing routers
-- [ ] Build student sign-up flow:
+- [x] Build `auth/middleware.py` — verify Supabase JWT on every protected route, extract role
+- [x] Build role decorators: `@require_role('student')`, `@require_role('warden')`, etc.
+- [x] Apply role guards to all existing routers
+- [x] Build student sign-up flow:
   - `POST /auth/signup` — creates Supabase auth user + `users` row (pending warden approval)
   - `PATCH /auth/approve/{user_id}` — warden approves → creates `students` row with roll_no + room
-- [ ] Test: student JWT cannot access warden routes; warden JWT can; mess_staff JWT limited to NOURISH routes
+- [x] Test: student JWT cannot access warden routes; warden JWT can; mess_staff JWT limited to NOURISH routes
 
 **Deliverables**:
 ```
@@ -281,31 +281,31 @@ backend/auth/
 **Sub-phases**:
 
 #### 7A — Foundation
-- [ ] `npm create vite@latest frontend -- --template react`
-- [ ] Install Tailwind CSS + shadcn/ui (for clean component library)
-- [ ] Set up React Router with route groups: `/student/*`, `/mess/*`, `/warden/*`
-- [ ] Supabase JS client — auth context provider
-- [ ] Route guards (redirect if wrong role)
+- [x] `npm create vite@latest frontend -- --template react`
+- [x] Install Tailwind CSS + custom glassmorphic styling
+- [x] Set up React Router with route groups: `/student/*`, `/mess/*`, `/warden/*`
+- [x] Supabase JS client — auth context provider
+- [x] Route guards (redirect if wrong role)
 
 #### 7B — Student Portal
-- [ ] Login/Signup page
-- [ ] Face enrollment page (webcam capture → POST /iris/enroll)
-- [ ] Attendance history page
-- [ ] Complaint submission form + status tracker
+- [x] Login/Signup page
+- [x] Face enrollment page (webcam capture → POST /iris/enroll)
+- [x] Attendance history page
+- [x] Complaint submission form + status tracker
 
 #### 7C — Mess Staff Portal
-- [ ] Login page
-- [ ] Live inventory table + alert badges
-- [ ] PDF menu upload → preview structured result → confirm
-- [ ] NLP command bar (text input → show parsed result → apply)
-- [ ] Today's entry counts per meal
+- [x] Login page
+- [x] Live inventory table + alert badges
+- [x] PDF menu upload → preview structured result → confirm
+- [x] NLP command bar (text input → show parsed result → apply)
+- [x] Today's entry counts per meal
 
 #### 7D — Warden/Admin Portal
-- [ ] Dashboard: attendance %, entry counts, open complaints, active alerts (summary cards)
-- [ ] Defaulters list
-- [ ] Complaints table (filterable, sortable, assignable)
-- [ ] HERALD anomaly feed (unread flags, mark-as-seen)
-- [ ] Student approval & enrollment management
+- [x] Dashboard: attendance %, entry counts, open complaints, active alerts (summary cards)
+- [x] Defaulters list
+- [x] Complaints table (filterable, sortable, assignable)
+- [x] HERALD anomaly feed (unread flags, mark-as-seen)
+- [x] Student approval & enrollment management
 
 ---
 

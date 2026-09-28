@@ -33,7 +33,7 @@ import { irisApi } from '../../services/api'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 export default function FaceEnrollmentPage() {
-  const { user, studentProfile, refreshProfile } = useAuth()
+  const { user, profile, studentProfile, refreshProfile } = useAuth()
 
   // Tab: 'webcam' | 'upload'
   const [activeTab, setActiveTab] = useState('webcam')
@@ -207,6 +207,14 @@ export default function FaceEnrollmentPage() {
       return
     }
 
+    if (profile?.status === 'pending' || !studentProfile) {
+      setEnrollResult({
+        success: false,
+        message: 'Your account is pending Warden approval. The warden must verify your room allocation and approve your registration before you can enroll face biometrics.',
+      })
+      return
+    }
+
     const fileToUpload = activeTab === 'webcam' ? capturedBlob : uploadedFile
     if (!fileToUpload) {
       setEnrollResult({
@@ -323,6 +331,31 @@ export default function FaceEnrollmentPage() {
           </div>
         </div>
       </div>
+
+      {/* Pending Warden Approval Notice */}
+      {(profile?.status === 'pending' || !studentProfile) && (
+        <div className="card p-5 border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-amber-200">Account Awaiting Warden Approval</h3>
+              <p className="text-xs text-amber-300/80 mt-1 max-w-xl">
+                Your student registration is awaiting Warden verification and room allocation.
+                Once the warden approves your registration in the Warden portal, you can immediately enroll your face biometrics for contactless gate and mess access.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => refreshProfile && refreshProfile()}
+            className="btn-secondary text-xs flex items-center gap-1.5 shrink-0 self-end sm:self-center"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Check Approval Status
+          </button>
+        </div>
+      )}
 
       {/* Main interactive enrollment grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

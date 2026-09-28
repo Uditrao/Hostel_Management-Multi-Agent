@@ -5,6 +5,7 @@
  * Integrates directly with SENTINEL Agent (/sentinel/attendance & /sentinel/window).
  */
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import {
   CalendarCheck,
   Clock,
@@ -16,7 +17,8 @@ import {
   RefreshCw,
   Search,
   Sparkles,
-  Calendar
+  Calendar,
+  Camera
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { sentinelApi } from '../../services/api'
@@ -172,6 +174,24 @@ export default function AttendancePage() {
           </div>
         </div>
       )}
+
+      {/* Biometric Checkpoint Explainer */}
+      <div className="card p-4 border border-white/[0.08] bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+            <Camera className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-200">Autonomous Gate Attendance Checkpoint</p>
+            <p className="text-xs text-slate-400 mt-0.5 max-w-xl">
+              Attendance is recorded contact-free when you pass through the hostel gate camera scanner. Ensure your face is enrolled under Face Biometrics so IRIS can recognize you instantly upon entry.
+            </p>
+          </div>
+        </div>
+        <Link to="/student/enroll" className="btn-secondary text-xs shrink-0 self-end sm:self-center">
+          Face Enrollment
+        </Link>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

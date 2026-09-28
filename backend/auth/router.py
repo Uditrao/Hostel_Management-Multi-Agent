@@ -109,18 +109,16 @@ async def signup(body: SignupRequest):
         raise HTTPException(status_code=500, detail="Signup succeeded but no user ID returned.")
 
     # 2. Insert into `users` table (application-level profile)
+    # users table schema: (id, email, role, created_at)
     account_status = "active" if body.role == "kiosk" else "pending"
     try:
-        db.table("users").insert({
-            "id":        user_id,
-            "email":     body.email,
-            "full_name": body.full_name,
-            "role":      body.role,
-            "status":    account_status,
+        db.table("users").upsert({
+            "id":    user_id,
+            "email": body.email,
+            "role":  body.role,
         }).execute()
     except Exception as exc:
         logger.error("Failed to insert users row for %s: %s", user_id, exc)
-        # Don't fail the whole signup — auth user was created. Log and continue.
 
     logger.info("New user registered: %s (%s) — status=%s", body.email, body.role, account_status)
 
@@ -133,7 +131,7 @@ async def signup(body: SignupRequest):
         "message":  (
             "Account created and active."
             if account_status == "active"
-            else "Account created. Awaiting warden approval before you can log in."
+            else "Account created. Awaiting warden approval before your profile is fully activated."
         ),
     }
 
@@ -144,8 +142,6 @@ async def login(body: LoginRequest):
     Authenticate with email + password.
 
     Returns Supabase JWT `access_token` — use this as `Authorization: Bearer <token>` on all protected routes.
-
-    > **Note**: Accounts with `status=pending` will receive a 403 after login verification.
     """
     db = get_client()
 
@@ -169,28 +165,27 @@ async def login(body: LoginRequest):
     if not auth_resp.session or not auth_resp.session.access_token:
         raise HTTPException(status_code=401, detail="Login failed — no session returned.")
 
-    # Check application-level account status
-    try:
-        user_row = (
-            db.table("users")
-            .select("status, role, full_name")
-            .eq("id", auth_resp.user.id)
-            .maybe_single()
-            .execute()
-        )
-        user_data = user_row.data or {}
-        if user_data.get("status") == "pending":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Your account is pending warden approval. Please wait for approval.",
-            )
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.warning("Could not check user status for %s: %s", auth_resp.user.id, exc)
-        user_data = {}
+    user = auth_resp.user
+    meta = (user.user_metadata or {}) if user else {}
+    role = meta.get("role", "student")
+    full_name = meta.get("full_name") or body.email.split("@")[0]
 
-    logger.info("Login successful: %s (%s)", body.email, user_data.get("role", "?"))
+    # For students: active if in students table, pending if not yet approved
+    account_status = "active"
+    if role == "student":
+        try:
+            s_row = (
+                db.table("students")
+                .select("id")
+                .eq("id", user.id)
+                .execute()
+            )
+            if not (s_row and s_row.data):
+                account_status = "pending"
+        except Exception as exc:
+            logger.warning("Could not check student approval status for %s: %s", user.id, exc)
+
+    logger.info("Login successful: %s (role=%s, status=%s)", body.email, role, account_status)
 
     return {
         "success":      True,
@@ -198,11 +193,11 @@ async def login(body: LoginRequest):
         "token_type":   "bearer",
         "expires_in":   auth_resp.session.expires_in,
         "user": {
-            "id":        auth_resp.user.id,
+            "id":        user.id,
             "email":     body.email,
-            "role":      user_data.get("role"),
-            "full_name": user_data.get("full_name"),
-            "status":    user_data.get("status"),
+            "role":      role,
+            "full_name": full_name,
+            "status":    account_status,
         },
     }
 
@@ -211,58 +206,57 @@ async def login(body: LoginRequest):
 async def get_me(current_user: dict = Depends(get_any_authenticated_user)):
     """
     Returns the profile of the currently authenticated user from the JWT payload.
-    Also fetches the application-level row from `users` table.
+    Also fetches the application-level row from `students` table if role == student.
     """
     user_id = extract_user_id(current_user)
     role    = extract_role(current_user)
     email   = extract_email(current_user)
+    meta    = current_user.get("user_metadata") or {}
 
-    # Fetch extended profile from users table
     db = get_client()
-    try:
-        row = (
-            db.table("users")
-            .select("full_name, status, created_at")
-            .eq("id", user_id)
-            .maybe_single()
-            .execute()
-        )
-        profile = row.data or {}
-    except Exception as exc:
-        logger.warning("Could not fetch users row for %s: %s", user_id, exc)
-        profile = {}
 
-    # If role is student, fetch additional details from students table
+    # If role is student, check students table to verify approval + enrollment
     student_profile = None
+    account_status = "active"
+
     if role == "student":
         try:
             s_row = (
                 db.table("students")
-                .select("roll_no, room_no, photo_url, enrolled_at, face_embedding")
+                .select("roll_no, name, room_no, photo_url, enrolled_at, face_embedding")
                 .eq("id", user_id)
-                .maybe_single()
                 .execute()
             )
-            if s_row.data:
-                sd = s_row.data
+            if s_row and s_row.data:
+                sd = s_row.data[0]
                 student_profile = {
-                    "roll_no": sd.get("roll_no"),
-                    "room_no": sd.get("room_no"),
-                    "photo_url": sd.get("photo_url"),
-                    "enrolled_at": sd.get("enrolled_at"),
-                    "is_face_enrolled": bool(sd.get("face_embedding") or sd.get("enrolled_at")),
+                    "roll_no":          sd.get("roll_no"),
+                    "name":             sd.get("name"),
+                    "room_no":          sd.get("room_no"),
+                    "photo_url":        sd.get("photo_url"),
+                    "enrolled_at":      sd.get("enrolled_at"),
+                    "is_face_enrolled": bool(sd.get("face_embedding") is not None or sd.get("enrolled_at")),
                 }
+                account_status = "active"
+            else:
+                account_status = "pending"
         except Exception as exc:
             logger.warning("Could not fetch students record for %s: %s", user_id, exc)
+            account_status = "pending"
+
+    full_name = (
+        (student_profile.get("name") if student_profile else None)
+        or meta.get("full_name")
+        or (email.split("@")[0] if email else "User")
+    )
 
     return {
         "success":         True,
         "user_id":         user_id,
         "email":           email,
         "role":            role,
-        "full_name":       profile.get("full_name"),
-        "status":          profile.get("status"),
-        "created_at":      profile.get("created_at"),
+        "full_name":       full_name,
+        "status":          account_status,
         "student_profile": student_profile,
     }
 
@@ -275,33 +269,91 @@ async def list_pending(
     _warden: dict = Depends(require_role("warden")),
 ):
     """
-    Returns all user accounts awaiting warden approval.
-    Use `PATCH /auth/approve/{user_id}` to approve a specific user.
+    Returns all student accounts awaiting warden approval.
+    A student is pending if registered with role='student' but not yet in the `students` table.
     """
     db = get_client()
     try:
-        resp = (
-            db.table("users")
-            .select("id, email, full_name, role, status, created_at")
-            .eq("status", "pending")
-            .order("created_at", desc=True)
-            .execute()
-        )
-        pending = resp.data or []
+        # 1. Fetch all approved student IDs
+        stu_resp = db.table("students").select("id").execute()
+        approved_ids = {s["id"] for s in (stu_resp.data or []) if s.get("id")}
+
+        # 2. Fetch all auth users
+        auth_users = db.auth.admin.list_users()
+        pending = []
+        for u in auth_users:
+            meta = u.user_metadata or {}
+            role = meta.get("role")
+            if role == "student" and u.id not in approved_ids:
+                created_at_val = u.created_at
+                if hasattr(created_at_val, "isoformat"):
+                    created_at_val = created_at_val.isoformat()
+                elif created_at_val:
+                    created_at_val = str(created_at_val)
+
+                pending.append({
+                    "id":         u.id,
+                    "email":      u.email,
+                    "full_name":  meta.get("full_name") or (u.email.split("@")[0] if u.email else "Student"),
+                    "role":       "student",
+                    "roll_no":    meta.get("roll_no") or "",
+                    "room_no":    meta.get("room_no") or "",
+                    "status":     "pending",
+                    "created_at": created_at_val,
+                })
+
+        return {
+            "success": True,
+            "count":   len(pending),
+            "pending": pending,
+        }
     except Exception as exc:
         logger.error("Failed to fetch pending users: %s", exc)
         raise HTTPException(status_code=500, detail=f"Failed to retrieve pending users: {exc}")
 
-    return {
-        "success": True,
-        "count":   len(pending),
-        "pending": pending,
-    }
+
+@router.get(
+    "/students",
+    summary="List all approved students (Warden only)",
+)
+async def list_approved_students(
+    _warden: dict = Depends(require_role("warden")),
+):
+    """
+    Returns all approved students currently active in the hostel.
+    """
+    db = get_client()
+    try:
+        resp = (
+            db.table("students")
+            .select("id, roll_no, name, room_no, photo_url, face_embedding, enrolled_at")
+            .order("name")
+            .execute()
+        )
+        students = []
+        for s in (resp.data or []):
+            students.append({
+                "id":               s.get("id"),
+                "roll_no":          s.get("roll_no"),
+                "name":             s.get("name"),
+                "room_no":          s.get("room_no"),
+                "photo_url":        s.get("photo_url"),
+                "is_face_enrolled": bool(s.get("face_embedding") is not None or s.get("enrolled_at")),
+                "enrolled_at":      s.get("enrolled_at"),
+            })
+        return {
+            "success":  True,
+            "count":    len(students),
+            "students": students,
+        }
+    except Exception as exc:
+        logger.error("Failed to fetch approved students: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve students: {exc}")
 
 
 @router.patch(
     "/approve/{user_id}",
-    summary="Approve a pending user account (Warden only)",
+    summary="Approve a pending student account (Warden only)",
 )
 async def approve_user(
     user_id: str,
@@ -309,86 +361,99 @@ async def approve_user(
     _warden: dict = Depends(require_role("warden")),
 ):
     """
-    Approve a pending user account.
+    Approve a pending student account.
 
-    - Sets `users.status = 'active'`.
-    - For **student** role: also creates a `students` row with `roll_no` and `room_no`.
-
-    If the user is not pending, returns a 409 conflict error.
+    - Creates a row in `students` with roll_no, room_no, and name.
+    - Updates `user_metadata` in Supabase Auth to record approval.
     """
     db = get_client()
 
-    # Fetch the user row to check status + role
+    # 1. Check if student is already in students table
     try:
-        user_resp = (
-            db.table("users")
-            .select("id, email, full_name, role, status")
+        existing = (
+            db.table("students")
+            .select("id")
             .eq("id", user_id)
-            .maybe_single()
             .execute()
         )
-        user_data = user_resp.data
+        if existing and existing.data:
+            raise HTTPException(status_code=409, detail="Student is already approved and active.")
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Database error: {exc}")
+        logger.warning("Could not check existing student record: %s", exc)
 
-    if not user_data:
-        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
-
-    if user_data["status"] == "active":
-        raise HTTPException(status_code=409, detail="User is already approved and active.")
-
-    # Activate the account
+    # 2. Fetch auth user to get metadata
     try:
-        db.table("users").update({"status": "active"}).eq("id", user_id).execute()
+        auth_user_resp = db.auth.admin.get_user_by_id(user_id)
+        auth_user = auth_user_resp.user if auth_user_resp else None
+        meta = (auth_user.user_metadata if auth_user else {}) or {}
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to activate user: {exc}")
+        logger.warning("Could not fetch auth user for %s: %s", user_id, exc)
+        auth_user = None
+        meta = {}
 
-    # For students: create the students row
-    students_row = None
-    if user_data["role"] == "student":
-        roll = body.roll_no
-        room = body.room_no
-        if not roll or not room:
-            try:
-                auth_user = db.auth.admin.get_user_by_id(user_id)
-                meta = (auth_user.user.user_metadata if auth_user and auth_user.user else {}) or {}
-                roll = roll or meta.get("roll_no")
-                room = room or meta.get("room_no")
-            except Exception as e:
-                logger.warning("Could not fetch user_metadata during approval: %s", e)
-        if not roll or not room:
-            raise HTTPException(
-                status_code=400,
-                detail="roll_no and room_no are required when approving a student.",
-            )
-        try:
-            stu_resp = db.table("students").insert({
-                "id":        user_id,
-                "name":      user_data.get("full_name", ""),
-                "email":     user_data.get("email", ""),
-                "roll_no":   roll,
-                "room_no":   room,
-                "is_active": True,
-            }).execute()
-            students_row = stu_resp.data[0] if stu_resp.data else None
-        except Exception as exc:
-            logger.error("Failed to create students row for %s: %s", user_id, exc)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Account activated but failed to create student record: {exc}",
-            )
+    email = auth_user.email if auth_user else None
+    full_name = meta.get("full_name") or ""
+    roll = body.roll_no or meta.get("roll_no")
+    room = body.room_no or meta.get("room_no")
 
-    logger.info(
-        "Warden approved user: %s (%s) — role=%s",
-        user_data.get("email"), user_id, user_data.get("role"),
-    )
+    if not roll or not room:
+        raise HTTPException(
+            status_code=400,
+            detail="roll_no and room_no are required to approve a student.",
+        )
+
+    # 3. Ensure user exists in public.users table (id, email, role)
+    try:
+        db.table("users").upsert({
+            "id":    user_id,
+            "email": email or "",
+            "role":  "student",
+        }).execute()
+    except Exception as exc:
+        logger.warning("Failed to upsert public.users row for %s: %s", user_id, exc)
+
+    # 4. Insert into students table (columns: id, roll_no, name, room_no)
+    try:
+        stu_resp = db.table("students").insert({
+            "id":      user_id,
+            "roll_no": roll.strip(),
+            "name":    full_name.strip() or email or "Student",
+            "room_no": room.strip(),
+        }).execute()
+        students_row = stu_resp.data[0] if stu_resp.data else None
+    except Exception as exc:
+        logger.error("Failed to create students row for %s: %s", user_id, exc)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create student record: {exc}",
+        )
+
+    # 5. Update user_metadata in Supabase Auth to record approval
+    try:
+        db.auth.admin.update_user_by_id(
+            user_id,
+            attributes={
+                "user_metadata": {
+                    **meta,
+                    "approved": True,
+                    "roll_no":  roll.strip(),
+                    "room_no":  room.strip(),
+                }
+            }
+        )
+    except Exception as exc:
+        logger.warning("Failed to update user_metadata on approval: %s", exc)
+
+    logger.info("Warden approved student: %s (%s) — roll=%s, room=%s", email, user_id, roll, room)
 
     return {
         "success":      True,
         "user_id":      user_id,
-        "email":        user_data.get("email"),
-        "role":         user_data.get("role"),
+        "email":        email,
+        "role":         "student",
         "status":       "active",
         "students_row": students_row,
-        "message":      f"User '{user_data.get('email')}' approved and activated.",
+        "message":      f"Student '{email}' approved and activated successfully.",
     }

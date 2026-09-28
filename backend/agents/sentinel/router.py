@@ -17,18 +17,21 @@ Phase 6: Role guards applied.
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, datetime, time
 from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from db.supabase_client import get_client
 from agents.sentinel.attendance import (
     record_gate_attendance,
     get_student_attendance,
     get_defaulters,
     get_attendance_window,
     update_attendance_window,
+    _get_current_ist_datetime,
+    IST_TZ,
 )
 from agents.sentinel.scheduler_jobs import (
     run_defaulter_check_job,
@@ -42,6 +45,10 @@ router = APIRouter()
 
 
 # ── Pydantic Request Schemas ─────────────────────────────────────────────────
+
+class ManualCheckinRequest(BaseModel):
+    student_id: str = Field(..., description="UUID of the student")
+    status: Optional[str] = Field("present", description="'present' | 'late'")
 
 class GateEventRequest(BaseModel):
     recognized: bool = Field(..., description="Whether the face was recognized")
@@ -124,6 +131,97 @@ async def get_attendance(
     Retrieve attendance logs for a student, ordered newest first.
     """
     result = get_student_attendance(student_id=student_id, limit=limit)
+    return result
+
+
+@router.get(
+    "/logs/today",
+    summary="Get today's gate check-in logs [warden]",
+    response_description="List of all student check-ins recorded today",
+)
+async def get_today_gate_logs(
+    _warden: dict = Depends(require_role("warden")),
+):
+    """
+    Returns all attendance logs recorded today at the gate across all students,
+    with full student details (name, roll_no, room_no).
+    """
+    db = get_client()
+    now_ist = _get_current_ist_datetime()
+    start_of_day_iso = datetime.combine(now_ist.date(), time.min, tzinfo=IST_TZ).isoformat()
+    end_of_day_iso = datetime.combine(now_ist.date(), time.max, tzinfo=IST_TZ).isoformat()
+
+    try:
+        logs_resp = (
+            db.table("attendance_logs")
+            .select("id, student_id, timestamp, status, method, students(name, roll_no, room_no)")
+            .gte("timestamp", start_of_day_iso)
+            .lte("timestamp", end_of_day_iso)
+            .order("timestamp", desc=True)
+            .execute()
+        )
+        logs = []
+        for row in (logs_resp.data or []):
+            stu = row.get("students") or {}
+            logs.append({
+                "id":         row.get("id"),
+                "student_id": row.get("student_id"),
+                "name":       stu.get("name") or "Student",
+                "roll_no":    stu.get("roll_no") or "—",
+                "room_no":    stu.get("room_no") or "—",
+                "status":     row.get("status"),
+                "method":     row.get("method"),
+                "timestamp":  row.get("timestamp"),
+            })
+        return {
+            "success": True,
+            "count":   len(logs),
+            "date":    now_ist.date().isoformat(),
+            "logs":    logs,
+        }
+    except Exception as exc:
+        logger.error("Failed to fetch today's gate logs: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch today's gate logs: {exc}")
+
+
+@router.post(
+    "/manual-checkin",
+    summary="Manually mark student attendance [warden]",
+    response_description="Attendance check-in result",
+)
+async def manual_checkin(
+    body: ManualCheckinRequest,
+    _warden: dict = Depends(require_role("warden")),
+):
+    """
+    Warden manually logs student attendance at the gate.
+    """
+    db = get_client()
+    try:
+        stu = (
+            db.table("students")
+            .select("id, name, roll_no, room_no")
+            .eq("id", body.student_id)
+            .execute()
+        )
+        if not (stu and stu.data):
+            raise HTTPException(status_code=404, detail="Student not found.")
+        stu_data = stu.data[0]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Database error: {exc}")
+
+    event = {
+        "recognized":   True,
+        "student_id":   body.student_id,
+        "student_name": stu_data.get("name"),
+        "roll_no":      stu_data.get("roll_no"),
+        "room_no":      stu_data.get("room_no"),
+        "confidence":   1.0,
+        "location":     "gate",
+    }
+    result = record_gate_attendance(event)
     return result
 
 

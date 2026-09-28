@@ -103,6 +103,64 @@ export const fixrApi = {
     }),
 }
 
+export const wardenApi = {
+  // Sentinel — defaulters & gate kiosk
+  getDefaulters: (targetDate = null) =>
+    api.get('/sentinel/defaulters', {
+      params: targetDate ? { target_date: targetDate } : {},
+    }),
+  triggerDefaultersCheck: () => api.post('/sentinel/check-defaulters'),
+  updateWindow: (payload) => api.put('/sentinel/window', payload),
+  getTodayGateLogs: () => api.get('/sentinel/logs/today'),
+  manualCheckin: (studentId, status = 'present') =>
+    api.post('/sentinel/manual-checkin', { student_id: studentId, status }),
+  recognizeFace: (formData) =>
+    api.post('/iris/recognize', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  sendGateEvent: (event) => api.post('/sentinel/gate-event', event),
+
+  // FIXR — complaints (warden view)
+  getComplaints: ({ status = null, category = null, urgency = null, limit = 50, offset = 0 } = {}) =>
+    api.get('/fixr/complaints', {
+      params: {
+        ...(status   ? { status }   : {}),
+        ...(category ? { category } : {}),
+        ...(urgency  ? { urgency }  : {}),
+        limit,
+        offset,
+      },
+    }),
+  getComplaintsSummary: () => api.get('/fixr/complaints/summary'),
+  patchComplaint: (id, payload) => api.patch(`/fixr/complaints/${id}`, payload),
+
+  // HERALD — anomalies
+  getAnomalies: ({ unseenOnly = false, flagType = null, limit = 100, offset = 0 } = {}) =>
+    api.get('/herald/anomalies', {
+      params: {
+        unseen_only: unseenOnly,
+        ...(flagType ? { flag_type: flagType } : {}),
+        limit,
+        offset,
+      },
+    }),
+  runHerald: () => api.post('/herald/run'),
+  markAnomalySeen: (flagId) => api.patch(`/herald/anomalies/${flagId}/seen`),
+  getHeraldSummary: (unseenOnly = true) =>
+    api.get('/herald/summary', { params: { unseen_only: unseenOnly } }),
+
+  // Auth — student approvals
+  getPendingStudents: () => api.get('/auth/pending'),
+  getApprovedStudents: () => api.get('/auth/students'),
+  approveStudent: (userId, payload = {}) =>
+    api.patch(`/auth/approve/${userId}`, payload),
+
+  // Dashboard stats helpers
+  getHeraldStatus: () => api.get('/herald/status'),
+  getSentinelStatus: () => api.get('/sentinel/status'),
+  getFixrSummary: () => api.get('/fixr/complaints/summary'),
+}
+
 export const nourishApi = {
   getStatus: () => api.get('/nourish/status'),
   getEntries: (targetDate = null) =>
