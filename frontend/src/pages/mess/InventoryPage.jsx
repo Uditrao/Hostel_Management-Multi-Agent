@@ -95,8 +95,11 @@ export default function InventoryPage() {
       return
     }
     const num = parseFloat(quantity)
-    if (isNaN(num) || num <= 0) {
-      setModalFeedback({ success: false, message: 'Please enter a valid positive quantity.' })
+    if (isNaN(num) || (modalMode === 'set' ? num < 0 : num <= 0)) {
+      setModalFeedback({
+        success: false,
+        message: modalMode === 'set' ? 'Please enter a valid non-negative quantity.' : 'Please enter a valid positive quantity.',
+      })
       return
     }
 
@@ -112,9 +115,12 @@ export default function InventoryPage() {
       })
 
       if (res.data?.success) {
+        const itemObj = res.data.item || {}
+        const updatedQty = itemObj.quantity_available ?? itemObj.quantity ?? num
+        const updatedUnit = itemObj.unit || unit
         setModalFeedback({
           success: true,
-          message: `Stock for '${selectedItem}' updated to ${res.data.item?.quantity} ${res.data.item?.unit}!`,
+          message: `Stock for '${selectedItem}' updated to ${updatedQty} ${updatedUnit}!`,
         })
         setTimeout(() => {
           setModalOpen(false)
@@ -181,9 +187,9 @@ export default function InventoryPage() {
   const filteredInventory = useMemo(() => {
     let list = inventory
     if (statusFilter === 'low') {
-      list = list.filter((i) => Number(i.quantity) <= Number(i.min_threshold || 10))
+      list = list.filter((i) => Number(i.quantity_available ?? i.quantity ?? 0) <= Number(i.min_threshold || 10))
     } else if (statusFilter === 'normal') {
-      list = list.filter((i) => Number(i.quantity) > Number(i.min_threshold || 10))
+      list = list.filter((i) => Number(i.quantity_available ?? i.quantity ?? 0) > Number(i.min_threshold || 10))
     }
 
     if (searchQuery.trim()) {
@@ -389,7 +395,7 @@ export default function InventoryPage() {
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
                 {filteredInventory.map((item) => {
-                  const qty = Number(item.quantity)
+                  const qty = Number(item.quantity_available ?? item.quantity ?? 0)
                   const threshold = Number(item.min_threshold || 10)
                   const isLow = qty <= threshold
                   const isCritical = qty <= threshold / 2
@@ -534,22 +540,50 @@ export default function InventoryPage() {
                   required
                   placeholder="e.g. rice, milk, dal, onions..."
                   value={selectedItem}
-                  onChange={(e) => setSelectedItem(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setSelectedItem(val)
+                    const match = inventory.find(
+                      (i) => i.item_name?.toLowerCase() === val.trim().toLowerCase()
+                    )
+                    if (match?.unit) {
+                      setUnit(match.unit)
+                    }
+                  }}
+                  list="inventory-item-list"
                   className="w-full px-3.5 py-2.5 rounded-xl glass text-xs text-slate-100 border border-white/10 focus:outline-none focus:border-amber-500/50"
                 />
+                <datalist id="inventory-item-list">
+                  {inventory.map((item) => (
+                    <option key={item.id || item.item_name} value={item.item_name}>
+                      Current: {item.quantity_available ?? item.quantity} {item.unit}
+                    </option>
+                  ))}
+                </datalist>
+                {(() => {
+                  const match = inventory.find(i => i.item_name?.toLowerCase() === selectedItem.trim().toLowerCase())
+                  if (!match) return null
+                  const curQty = match.quantity_available ?? match.quantity ?? 0
+                  return (
+                    <p className="text-[11px] text-amber-400 font-mono mt-1">
+                      Current stock: <strong className="text-white">{curQty} {match.unit}</strong>
+                    </p>
+                  )
+                })()}
               </div>
 
               {/* Quantity & Unit */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-400 mb-1">
-                    Quantity
+                    {modalMode === 'set' ? 'New Exact Stock Level' : modalMode === 'add' ? 'Quantity to Add' : 'Quantity to Deduct'}
                   </label>
                   <input
                     type="number"
                     step="any"
+                    min={modalMode === 'set' ? '0' : '0.001'}
                     required
-                    placeholder="e.g. 25"
+                    placeholder={modalMode === 'set' ? 'e.g. 0 or 50' : 'e.g. 25'}
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl glass text-xs text-slate-100 border border-white/10 focus:outline-none focus:border-amber-500/50 font-mono"

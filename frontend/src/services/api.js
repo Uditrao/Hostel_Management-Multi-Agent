@@ -199,6 +199,7 @@ export const nourishApi = {
   uploadMenuPdf: (formData) =>
     api.post('/nourish/menu/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000, // 2 minutes for LLM multimodal PDF menu parsing
     }),
   saveConfirmedMenu: (payload) =>
     api.post('/nourish/menu/save', payload),

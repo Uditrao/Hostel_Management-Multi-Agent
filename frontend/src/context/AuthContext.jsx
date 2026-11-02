@@ -53,15 +53,15 @@ export function AuthProvider({ children }) {
 
   const fetchProfile = useCallback(async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return null
+
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/auth/me`,
         {
           headers: {
             'Content-Type': 'application/json',
-            ...(await (async () => {
-              const { data: { session } } = await supabase.auth.getSession()
-              return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
-            })()),
+            Authorization: `Bearer ${session.access_token}`,
           },
         }
       )
@@ -69,6 +69,14 @@ export function AuthProvider({ children }) {
         const data = await res.json()
         setProfile(data)
         return data
+      }
+      if (res.status === 401) {
+        // Token belongs to a deleted/expired user in Supabase — purge stale session
+        await supabase.auth.signOut().catch(() => {})
+        setUser(null)
+        setRole(null)
+        setProfile(null)
+        return null
       }
     } catch {
       // Backend maybe offline

@@ -275,7 +275,7 @@ export default function NlpCommandPage() {
                       <p className="text-xs text-slate-400">
                         New Stock Level:{' '}
                         <strong className="text-emerald-300 font-mono text-sm">
-                          {itemData.quantity} {itemData.unit}
+                          {itemData.quantity_available ?? itemData.quantity} {itemData.unit}
                         </strong>
                       </p>
                       <p className="text-[10px] text-slate-500 font-mono">

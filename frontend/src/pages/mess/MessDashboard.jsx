@@ -80,7 +80,7 @@ export default function MessDashboard() {
       if (invRes.data?.success) {
         const items = invRes.data.inventory || []
         const low = items.filter(
-          (i) => Number(i.quantity) <= Number(i.min_threshold || 10)
+          (i) => Number(i.quantity_available ?? i.quantity ?? 0) <= Number(i.min_threshold || 10)
         )
         setInventoryStats({
           totalItems: items.length,
