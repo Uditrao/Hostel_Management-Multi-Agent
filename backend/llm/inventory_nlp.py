@@ -187,7 +187,7 @@ Output only valid JSON conforming strictly to the requested schema.
 class InventoryActionItem(BaseModel):
     item_name: str
     action: str = Field(..., pattern="^(add|subtract|set)$")
-    quantity: float = Field(..., gt=0)
+    quantity: float = Field(..., ge=0)
     unit: str
     note: Optional[str] = None
 

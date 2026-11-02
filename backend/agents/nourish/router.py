@@ -83,7 +83,7 @@ class MessEventRequest(BaseModel):
 class StockUpdateRequest(BaseModel):
     item_name:  str            = Field(..., example="rice", description="Name of the inventory item")
     action:     str            = Field(..., example="add",  description="'set' | 'add' | 'subtract'")
-    quantity:   float          = Field(..., gt=0,           description="Quantity (always positive)")
+    quantity:   float          = Field(..., ge=0,           description="Quantity (always positive or zero)")
     unit:       str            = Field(..., example="kg",   description="Unit (e.g. 'kg', 'L', 'units')")
     updated_by: Optional[str]  = Field(None,                description="UUID of the staff member")
 

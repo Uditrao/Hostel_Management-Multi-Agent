@@ -135,7 +135,13 @@ def parse_menu_pdf(pdf_bytes: bytes, filename: str = "menu.pdf") -> Dict[str, An
 
     try:
         b64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+        candidate_models = [
+            "gemini-3.5-flash-lite",   # Fastest, cost-effective
+            "gemini-3.5-flash",         # Standard fast model
+            "gemini-flash-latest",      # Rolling alias → latest stable flash
+            "gemini-2.0-flash",         # Well-tested legacy multimodal
+            "gemini-1.5-flash",         # Most reliable legacy fallback
+        ]
 
         payload = {
             "contents": [
@@ -159,11 +165,39 @@ def parse_menu_pdf(pdf_bytes: bytes, filename: str = "menu.pdf") -> Dict[str, An
             },
         }
 
-        logger.info("NOURISH Menu: Calling Gemini 3.5 Flash REST API for '%s'...", filename)
-        with httpx.Client(timeout=90.0) as client:
-            resp = client.post(url, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
+        data = None
+        last_error = None
+
+        with httpx.Client(timeout=120.0) as client:
+            for model_name in candidate_models:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                logger.info("NOURISH Menu: Calling Gemini model '%s' for '%s'...", model_name, filename)
+                try:
+                    resp = client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        logger.info("NOURISH Menu: '%s' succeeded for '%s'", model_name, filename)
+                        break
+                    elif resp.status_code in (404, 429, 503):
+                        logger.warning("NOURISH Menu: model '%s' returned status %d — trying fallback", model_name, resp.status_code)
+                        last_error = f"Model {model_name} returned status {resp.status_code}: {resp.text[:150]}"
+                        continue
+                    else:
+                        resp.raise_for_status()
+                except httpx.HTTPStatusError as h_err:
+                    last_error = str(h_err)
+                    logger.warning("NOURISH Menu: '%s' failed (%s) — trying next model", model_name, h_err)
+                    continue
+
+        if not data:
+            return {
+                "success": False,
+                "week_range": "",
+                "meals": [],
+                "menu": None,
+                "raw_json": "",
+                "error": last_error or "All candidate Gemini models failed to process PDF.",
+            }
 
         # Extract text from candidate response
         candidates = data.get("candidates", [])
@@ -363,7 +397,7 @@ def get_menu(
     Returns:
         {success, meal_type, effective_date, dishes}
     """
-    from datetime import timezone, timedelta
+    from datetime import datetime, timezone, timedelta
     td = target_date or datetime.now(timezone(timedelta(hours=5, minutes=30))).date().isoformat()
     try:
         client = get_client()

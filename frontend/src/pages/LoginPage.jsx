@@ -4,7 +4,7 @@
  * Unified login for all roles — uses Supabase email/password auth.
  * Includes quick-fill demo buttons for easy development testing.
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, LogIn, Cpu } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -13,12 +13,12 @@ import LoadingSpinner from '../components/common/LoadingSpinner'
 // Demo credentials for quick testing — REMOVE in production
 const DEMO_ACCOUNTS = [
   { role: 'warden',     email: 'warden@hostel.com',     password: 'warden123',  label: 'Warden',      color: 'badge-violet' },
-  { role: 'mess_staff', email: 'mess@hostel.com',        password: 'mess123',    label: 'Mess Staff',  color: 'badge-amber'  },
+  { role: 'mess_staff', email: 'mess@hostel.com',        password: 'mess1234',   label: 'Mess Staff',  color: 'badge-amber'  },
   { role: 'student',    email: 'student@hostel.com',     password: 'student123', label: 'Student',     color: 'badge-cyan'   },
 ]
 
 export default function LoginPage() {
-  const { login, isAuthenticated, loading: authLoading, getRoleHome } = useAuth()
+  const { login, logout, role, isAuthenticated, user, loading: authLoading, getRoleHome } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect') || null
@@ -28,11 +28,6 @@ export default function LoginPage() {
   const [showPass,    setShowPass]    = useState(false)
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState(null)
-
-  // Already authenticated → go to portal
-  if (!authLoading && isAuthenticated) {
-    navigate(redirectTo || getRoleHome(), { replace: true })
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -72,6 +67,37 @@ export default function LoginPage() {
         </div>
 
         <div className="card">
+          {/* Active session bar if already logged in */}
+          {isAuthenticated && user && (
+            <div className="mb-5 p-3.5 rounded-xl bg-violet-500/10 border border-violet-500/25 flex items-center justify-between gap-3 text-xs">
+              <div className="min-w-0">
+                <p className="text-slate-300 truncate">
+                  Signed in as <strong className="text-violet-300">{user.email}</strong>
+                </p>
+                <p className="text-[11px] text-slate-500 capitalize">Role: {role || 'User'}</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate(redirectTo || getRoleHome())}
+                  className="px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-medium text-[11px]"
+                >
+                  Dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout()
+                    setEmail('')
+                    setPassword('')
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-[11px]"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
           {/* Demo quick-fill */}
           <div className="mb-5">
             <p className="section-label">Quick demo login</p>

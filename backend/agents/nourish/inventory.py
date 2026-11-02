@@ -78,6 +78,10 @@ def get_inventory() -> Dict[str, Any]:
             .execute()
         )
         items = res.data or []
+        for item in items:
+            qty = float(item.get("quantity_available") if item.get("quantity_available") is not None else 0.0)
+            item["quantity_available"] = qty
+            item["quantity"] = qty
         return {
             "success": True,
             "total_items": len(items),
@@ -113,23 +117,52 @@ def update_stock(
     if quantity < 0:
         return {"success": False, "error": "quantity must be non-negative."}
 
+    clean_name = item_name.strip()
+    if not clean_name:
+        return {"success": False, "error": "Item name cannot be empty."}
+
     try:
         client = get_client()
 
-        # Case-insensitive lookup
+        # 1. Case-insensitive lookup
         existing = (
             client.table("inventory")
             .select("*")
-            .ilike("item_name", item_name.strip())
+            .ilike("item_name", clean_name)
             .limit(1)
             .execute()
         )
+
+        # 2. If not found, check synonyms or common singular plurals
+        if not (existing.data and len(existing.data) > 0):
+            try:
+                from llm.inventory_nlp import ITEM_SYNONYMS
+                synonym = ITEM_SYNONYMS.get(clean_name.lower())
+                if synonym and synonym.lower() != clean_name.lower():
+                    existing = (
+                        client.table("inventory")
+                        .select("*")
+                        .ilike("item_name", synonym)
+                        .limit(1)
+                        .execute()
+                    )
+                elif clean_name.lower().endswith("s") and len(clean_name) > 3:
+                    singular = clean_name[:-1]
+                    existing = (
+                        client.table("inventory")
+                        .select("*")
+                        .ilike("item_name", singular)
+                        .limit(1)
+                        .execute()
+                    )
+            except Exception as match_err:
+                logger.debug("Synonym check error: %s", match_err)
 
         now_iso = _now_ist().isoformat()
 
         if existing.data and len(existing.data) > 0:
             row = existing.data[0]
-            current_qty = float(row.get("quantity_available", 0))
+            current_qty = float(row.get("quantity_available") if row.get("quantity_available") is not None else 0.0)
 
             if action == "set":
                 new_qty = quantity
@@ -138,9 +171,12 @@ def update_stock(
             else:  # subtract
                 new_qty = max(0.0, current_qty - quantity)
 
+            # Preserve existing unit if none passed or empty
+            effective_unit = unit.strip() if (unit and unit.strip()) else row.get("unit", "kg")
+
             payload: Dict[str, Any] = {
                 "quantity_available": new_qty,
-                "unit": unit,
+                "unit": effective_unit,
                 "last_updated": now_iso,
             }
             clean_updater = _clean_uuid(updated_by)
@@ -153,22 +189,32 @@ def update_stock(
                 .eq("id", row["id"])
                 .execute()
             )
-            updated = res.data[0] if res.data else {**row, **payload}
+            updated = dict(res.data[0]) if (res.data and len(res.data) > 0) else {**row, **payload}
+            updated["quantity_available"] = float(updated.get("quantity_available", new_qty))
+            updated["quantity"] = updated["quantity_available"]
             logger.info(
                 "NOURISH Inventory: %s %s %s %s (was %.2f -> now %.2f)",
-                action, quantity, unit, item_name, current_qty, new_qty,
+                action, quantity, effective_unit, row.get("item_name", clean_name), current_qty, new_qty,
             )
-            return {"success": True, "item": updated, "message": f"Stock updated: {item_name} -> {new_qty} {unit}"}
+            return {"success": True, "item": updated, "message": f"Stock updated: {row.get('item_name', clean_name)} -> {new_qty} {effective_unit}"}
 
         # Item doesn't exist yet — create it (only for 'set' or 'add')
         if action == "subtract":
             return {"success": False, "error": f"Item '{item_name}' not found in inventory."}
 
         new_qty = quantity
+        canonical_name = clean_name.lower()
+        try:
+            from llm.inventory_nlp import ITEM_SYNONYMS
+            canonical_name = ITEM_SYNONYMS.get(clean_name.lower(), clean_name.lower())
+        except Exception:
+            pass
+
+        effective_unit = unit.strip() if (unit and unit.strip()) else "kg"
         create_payload: Dict[str, Any] = {
-            "item_name": item_name.strip(),
+            "item_name": canonical_name,
             "quantity_available": new_qty,
-            "unit": unit,
+            "unit": effective_unit,
             "last_updated": now_iso,
         }
         clean_updater = _clean_uuid(updated_by)
@@ -176,9 +222,11 @@ def update_stock(
             create_payload["updated_by"] = clean_updater
 
         res = client.table("inventory").insert(create_payload).execute()
-        created = res.data[0] if res.data else create_payload
-        logger.info("NOURISH Inventory: Created new item '%s' %.2f %s", item_name, new_qty, unit)
-        return {"success": True, "item": created, "message": f"New inventory item created: {item_name} {new_qty} {unit}"}
+        created = dict(res.data[0]) if (res.data and len(res.data) > 0) else create_payload
+        created["quantity_available"] = float(created.get("quantity_available", new_qty))
+        created["quantity"] = created["quantity_available"]
+        logger.info("NOURISH Inventory: Created new item '%s' %.2f %s", canonical_name, new_qty, effective_unit)
+        return {"success": True, "item": created, "message": f"New inventory item created: {canonical_name} {new_qty} {effective_unit}"}
 
     except Exception as exc:
         logger.exception("NOURISH Inventory: update_stock error — %s", exc)

@@ -28,6 +28,8 @@ export default function MenuUploadPage() {
 
   const [selectedFile, setSelectedFile] = useState(null)
   const [parsing, setParsing] = useState(false)
+  const [parseElapsed, setParseElapsed] = useState(0)
+  const parseTimerRef = useRef(null)
   const [parseResult, setParseResult] = useState(null)
   const [parseError, setParseError] = useState(null)
 
@@ -82,6 +84,14 @@ export default function MenuUploadPage() {
     setParsing(true)
     setParseError(null)
     setParseResult(null)
+    setParseElapsed(0)
+
+    // Start elapsed-time counter
+    let seconds = 0
+    parseTimerRef.current = setInterval(() => {
+      seconds += 1
+      setParseElapsed(seconds)
+    }, 1000)
 
     try {
       const formData = new FormData()
@@ -101,6 +111,7 @@ export default function MenuUploadPage() {
         'Failed to connect to Gemini menu parser.'
       )
     } finally {
+      clearInterval(parseTimerRef.current)
       setParsing(false)
     }
   }
@@ -231,9 +242,19 @@ export default function MenuUploadPage() {
             className="btn-primary py-2.5 px-6 text-xs flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-glow-amber disabled:opacity-50"
           >
             {parsing ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
-            {parsing ? 'Parsing with Gemini…' : 'Analyze & Extract Menu'}
+            {parsing
+              ? `Parsing with Gemini… (${parseElapsed}s)`
+              : 'Analyze & Extract Menu'}
           </button>
         </div>
+
+        {/* Parsing progress hint */}
+        {parsing && (
+          <div className="flex items-center gap-2 text-xs text-amber-400/80 animate-pulse">
+            <Clock className="w-3.5 h-3.5 shrink-0" />
+            Gemini PDF parsing may take 20–30s — please wait, do not close this page.
+          </div>
+        )}
 
         {/* Error Alert */}
         {parseError && (
