@@ -48,6 +48,11 @@ from agents.nourish.inventory import (
     trigger_depletion,
     get_active_alerts,
     resolve_alert,
+    check_and_generate_forecast_alerts,
+    get_depletion_estimate,
+    execute_custom_depletion,
+    log_meal_wastage,
+    get_recent_wastage,
 )
 from agents.nourish.menu import (
     parse_menu_pdf,
@@ -78,6 +83,7 @@ class MessEventRequest(BaseModel):
     confidence:        Optional[float] = Field(None,  description="Cosine similarity score (0-1)")
     location:          Optional[str]   = Field("mess",description="Should be 'mess' for this endpoint")
     flagged_image_url: Optional[str]   = Field(None,  description="URL of the saved flagged image (unrecognised)")
+    meal_type:         Optional[str]   = Field(None,  description="Optional manual meal override: 'breakfast' | 'lunch' | 'dinner'")
 
 
 class StockUpdateRequest(BaseModel):
@@ -91,6 +97,31 @@ class StockUpdateRequest(BaseModel):
 class DepletionRequest(BaseModel):
     meal_type:   str           = Field(..., description="'breakfast' | 'lunch' | 'dinner'")
     target_date: Optional[str] = Field(None, description="YYYY-MM-DD (defaults to today IST)")
+    head_count:  Optional[int] = Field(None, description="Override head count (use kiosk count)", ge=1)
+
+
+class CustomDepletionItem(BaseModel):
+    item_name: str           = Field(..., description="Canonical ingredient name")
+    quantity:  float         = Field(..., description="Quantity to issue/deplete", ge=0.0)
+    unit:      str           = Field("kg", description="Unit (kg, L, etc.)")
+
+
+class CustomDepletionRequest(BaseModel):
+    meal_type:   str                       = Field(..., description="'breakfast' | 'lunch' | 'dinner'")
+    target_date: Optional[str]             = Field(None, description="YYYY-MM-DD")
+    head_count:  Optional[int]             = Field(None, description="Headcount served/planned", ge=1)
+    items:       List[CustomDepletionItem] = Field(..., description="List of item quantities to issue/deplete")
+    notes:       Optional[str]             = Field(None, description="Optional notes on stock adjustment")
+
+
+class WastageLogRequest(BaseModel):
+    meal_type:         str           = Field(..., description="'breakfast' | 'lunch' | 'dinner'")
+    target_date:       Optional[str] = Field(None, description="YYYY-MM-DD")
+    head_count_served: Optional[int] = Field(None, description="Actual diners served", ge=0)
+    waste_kg:          float         = Field(..., description="Total leftover waste in kg", ge=0.0)
+    leftover_dishes:   Optional[str] = Field(None, description="Summary of dishes wasted (e.g. Rice, Dal)")
+    reason:            Optional[str] = Field(None, description="Reason for leftover food")
+    notes:             Optional[str] = Field(None, description="Handling/disposal notes")
 
 
 class MenuSaveRequest(BaseModel):
@@ -260,6 +291,18 @@ async def inventory_alerts(
     return get_active_alerts(urgency_filter=urgency)
 
 
+@router.get(
+    "/inventory/forecast",
+    summary="Proactive ingredient forecast & advance procurement alerts [warden | mess_staff]",
+)
+async def inventory_forecast_alerts(
+    head_count: Optional[int] = Query(None, description="Optional planned headcount override"),
+    sync_to_db: bool = Query(True, description="Sync new alerts to inventory_alerts table"),
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
+    return check_and_generate_forecast_alerts(head_count=head_count, sync_to_db=sync_to_db)
+
+
 @router.post(
     "/inventory/alerts/{alert_id}/resolve",
     summary="Resolve an inventory alert [warden | mess_staff]",
@@ -290,7 +333,91 @@ async def run_depletion(
             parsed_date = date.fromisoformat(body.target_date)
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
-    return trigger_depletion(meal_type=body.meal_type, target_date=parsed_date)
+    return trigger_depletion(meal_type=body.meal_type, target_date=parsed_date, head_count_override=body.head_count)
+
+
+@router.get("/depletion/estimate", summary="Get recipe pre-filled depletion estimate for a meal [warden | mess_staff]")
+async def get_prefilled_depletion(
+    meal_type: str = Query(..., description="'breakfast' | 'lunch' | 'dinner'"),
+    head_count: Optional[int] = Query(None, description="Planned headcount override", ge=1),
+    target_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
+    """
+    Returns recipe-based pre-filled quantities for each ingredient in the meal,
+    along with current available stock and low-stock flags.
+    """
+    parsed_date: Optional[date] = None
+    if target_date:
+        try:
+            parsed_date = date.fromisoformat(target_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+    return get_depletion_estimate(meal_type=meal_type, head_count=head_count, target_date=parsed_date)
+
+
+@router.post("/depletion/custom", summary="Execute custom kitchen stock issue & depletion [warden | mess_staff]")
+async def run_custom_depletion(
+    body: CustomDepletionRequest,
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
+    """
+    Deducts manager-reviewed ingredient quantities from inventory and triggers safety buffer alerts.
+    """
+    parsed_date: Optional[date] = None
+    if body.target_date:
+        try:
+            parsed_date = date.fromisoformat(body.target_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    items_dict = [item.dict() for item in body.items]
+    return execute_custom_depletion(
+        meal_type=body.meal_type,
+        items=items_dict,
+        head_count=body.head_count,
+        target_date=parsed_date,
+        notes=body.notes,
+    )
+
+
+@router.post("/wastage", summary="Log post-meal food wastage [warden | mess_staff]")
+async def record_meal_wastage(
+    body: WastageLogRequest,
+    auth: dict = Depends(require_role("warden", "mess_staff")),
+):
+    """
+    Logs leftover food in kg, calculates per-student waste metrics, and records audit entry.
+    """
+    parsed_date: Optional[date] = None
+    if body.target_date:
+        try:
+            parsed_date = date.fromisoformat(body.target_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    user_id = auth.get("sub") or auth.get("id")
+    return log_meal_wastage(
+        meal_type=body.meal_type,
+        waste_kg=body.waste_kg,
+        head_count_served=body.head_count_served,
+        target_date=parsed_date,
+        leftover_dishes=body.leftover_dishes,
+        reason=body.reason,
+        notes=body.notes,
+        logged_by=user_id,
+    )
+
+
+@router.get("/wastage", summary="Get recent post-meal food wastage records [warden | mess_staff]")
+async def fetch_recent_wastage(
+    limit: int = Query(10, ge=1, le=50),
+    _auth: dict = Depends(require_role("warden", "mess_staff")),
+):
+    """
+    Returns recent post-meal food wastage records and today's total waste in kg.
+    """
+    return get_recent_wastage(limit=limit)
 
 
 # -- Phase 3B Routes: Menu PDF -------------------------------------------------

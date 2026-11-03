@@ -1,7 +1,7 @@
 /**
  * App.jsx
  * =======
- * Main Application Routing — Phase 7D Complete.
+ * Main Application Routing — Phase 7D Complete + NOURISH Mess Kiosk.
  * All role portals (Student, Mess, Warden) are fully wired to live backend agents.
  */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -23,6 +23,7 @@ import FaceEnrollmentPage from './pages/student/FaceEnrollmentPage'
 import AttendancePage from './pages/student/AttendancePage'
 import ComplaintsPage from './pages/student/ComplaintsPage'
 import MessDashboard from './pages/mess/MessDashboard'
+import MessKioskPage from './pages/mess/MessKioskPage'
 import InventoryPage from './pages/mess/InventoryPage'
 import MenuUploadPage from './pages/mess/MenuUploadPage'
 import NlpCommandPage from './pages/mess/NlpCommandPage'
@@ -68,6 +69,7 @@ export default function App() {
               <Route element={<MessLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<MessDashboard />} />
+                <Route path="kiosk" element={<MessKioskPage />} />
                 <Route path="inventory" element={<InventoryPage />} />
                 <Route path="menu" element={<MenuUploadPage />} />
                 <Route path="command" element={<NlpCommandPage />} />
