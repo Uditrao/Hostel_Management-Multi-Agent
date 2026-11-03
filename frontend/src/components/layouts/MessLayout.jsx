@@ -4,11 +4,12 @@
  * Amber-accented tabs for all NOURISH agent features.
  */
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Package, BookOpen, Terminal } from 'lucide-react'
+import { LayoutDashboard, Camera, Package, BookOpen, Terminal } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const tabs = [
   { to: '/mess/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
+  { to: '/mess/kiosk',       icon: Camera,          label: 'Mess Kiosk'  },
   { to: '/mess/inventory',   icon: Package,          label: 'Inventory'   },
   { to: '/mess/menu',        icon: BookOpen,         label: 'Menu Upload' },
   { to: '/mess/command',     icon: Terminal,         label: 'NLP Command' },

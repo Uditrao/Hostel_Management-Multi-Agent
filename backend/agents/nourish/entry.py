@@ -109,7 +109,7 @@ def record_mess_entry(event: Dict[str, Any]) -> Dict[str, Any]:
         Dict with {success, allowed, meal_type, reason, entry, student_*}
     """
     now = _now_ist()
-    meal_type = determine_meal_type(now.time())
+    meal_type = event.get("meal_type") or determine_meal_type(now.time())
     client = get_client()
 
     # -- Unrecognised path -----------------------------------------------------
@@ -303,7 +303,17 @@ def get_today_entries(target_date: Optional[date] = None) -> Dict[str, Any]:
             "success":      True,
             "date":         td.isoformat(),
             "current_meal": determine_meal_type(),
-            "summary":      summary,
+            "summary":            summary,
+            "by_meal":            {
+                m: {
+                    "count": summary[m]["recognised"],
+                    "unrecognised": summary[m]["unrecognised"],
+                    "total": summary[m]["total"],
+                }
+                for m in ("breakfast", "lunch", "dinner")
+            },
+            "total_allowed":      sum(summary[m]["recognised"] for m in ("breakfast", "lunch", "dinner")),
+            "total_unrecognised": sum(summary[m]["unrecognised"] for m in ("breakfast", "lunch", "dinner")),
         }
 
     except Exception as exc:
@@ -350,11 +360,11 @@ def get_entries_by_meal(
 
         query = (
             client.table("mess_entries")
-            .select("*")
+            .select("*, students(name, roll_no, room_no)")
             .eq("meal_type", meal_type)
             .gte("timestamp", start_iso)
             .lte("timestamp", end_iso)
-            .order("timestamp", desc=False)
+            .order("timestamp", desc=True)
             .range(offset, offset + limit - 1)
         )
 

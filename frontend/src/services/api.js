@@ -42,7 +42,6 @@ api.interceptors.response.use(
     const detail  = error.response?.data?.detail ?? error.message
 
     if (status === 401) {
-      // Token expired or invalid — Supabase will auto-refresh; optionally redirect
       console.warn('[API] 401 Unauthorized:', detail)
     } else if (status === 403) {
       console.warn('[API] 403 Forbidden:', detail)
@@ -57,6 +56,7 @@ api.interceptors.response.use(
 )
 
 export default api
+
 
 // ── Convenience API Services ───────────────────────────────────────────────────
 
@@ -73,6 +73,10 @@ export const irisApi = {
     api.post('/iris/enroll', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 90000,
+    }),
+  recognizeFace: (formData) =>
+    api.post('/iris/recognize', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     }),
 }
 
@@ -175,6 +179,7 @@ export const nourishApi = {
         offset,
       },
     }),
+  sendMessEvent: (event) => api.post('/nourish/mess-event', event),
   getMealWindows: () => api.get('/nourish/meal-windows'),
   getInventory: () => api.get('/nourish/inventory'),
   updateStock: ({ item_name, action, quantity, unit, updated_by = null }) =>
@@ -189,13 +194,35 @@ export const nourishApi = {
     api.get('/nourish/inventory/alerts', {
       params: urgency ? { urgency } : {},
     }),
+  getInventoryForecast: (headCount = null, syncToDb = true) =>
+    api.get('/nourish/inventory/forecast', {
+      params: {
+        ...(headCount ? { head_count: headCount } : {}),
+        sync_to_db: syncToDb,
+      },
+    }),
   resolveAlert: (alertId) =>
     api.post(`/nourish/inventory/alerts/${alertId}/resolve`),
-  runDepletion: (mealType, targetDate = null) =>
+  runDepletion: (mealType, targetDate = null, headCount = null) =>
     api.post('/nourish/depletion', {
       meal_type: mealType,
       target_date: targetDate,
+      ...(headCount ? { head_count: Number(headCount) } : {}),
     }),
+  getDepletionEstimate: (mealType, headCount = null, targetDate = null) =>
+    api.get('/nourish/depletion/estimate', {
+      params: {
+        meal_type: mealType,
+        ...(headCount ? { head_count: Number(headCount) } : {}),
+        ...(targetDate ? { target_date: targetDate } : {}),
+      },
+    }),
+  runCustomDepletion: (payload) =>
+    api.post('/nourish/depletion/custom', payload),
+  logWastage: (payload) =>
+    api.post('/nourish/wastage', payload),
+  getRecentWastage: (limit = 10) =>
+    api.get('/nourish/wastage', { params: { limit } }),
   uploadMenuPdf: (formData) =>
     api.post('/nourish/menu/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -219,5 +246,3 @@ export const nourishApi = {
       params: { limit, offset },
     }),
 }
-
-

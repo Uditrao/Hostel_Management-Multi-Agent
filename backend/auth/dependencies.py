@@ -139,10 +139,10 @@ async def get_kiosk_or_warden(
 
     payload = verify_supabase_jwt(credentials.credentials)
     role = extract_role(payload)
-    if role not in ("warden", "kiosk"):
+    if role not in ("warden", "kiosk", "mess_staff"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. Required role: warden or kiosk. Your role: '{role or 'unknown'}'.",
+            detail=f"Access denied. Required role: warden, mess_staff, or kiosk. Your role: '{role or 'unknown'}'.",
         )
     return payload
 

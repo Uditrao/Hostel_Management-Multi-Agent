@@ -1,0 +1,52 @@
+# Antigravity Ignore List
+# Avoid scanning or rendering large dependencies, binaries, artifacts, and cache
+
+# Dependencies & Environments
+backend/venv/
+venv/
+.venv/
+env/
+frontend/node_modules/
+node_modules/
+
+# Version Control & Metadata
+.git/
+.kilo/
+.vscode/
+.idea/
+
+# Python Cache & Build Artifacts
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+frontend/dist/
+
+# Static Binaries & ML Models
+*.onnx
+*.bin
+*.pt
+*.weights
+models/
+deepface_weights/
+
+# Media, PDFs & Large Assets
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.ico
+*.mp4
+*.avi
+uploads/
+
+# Logs & Temp
+*.log
+*.tmp
+logs/
+temp/
+
