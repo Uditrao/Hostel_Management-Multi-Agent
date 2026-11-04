@@ -229,6 +229,13 @@ export default function MessKioskPage() {
     return () => stopCamera()
   }, [startCamera, stopCamera])
 
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current
+      videoRef.current.play().catch(() => {})
+    }
+  }, [cameraActive])
+
   // 3. Process Face Recognition & Mess Check-in
   const performScan = useCallback(async () => {
     const video = videoRef.current
@@ -555,15 +562,16 @@ export default function MessKioskPage() {
 
               {/* Viewport Frame */}
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border border-white/10 flex items-center justify-center">
-                {cameraActive ? (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover transform -scale-x-100"
-                  />
-                ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`w-full h-full object-cover transform -scale-x-100 ${
+                    cameraActive ? 'block' : 'hidden'
+                  }`}
+                />
+                {!cameraActive && (
                   <div className="text-center p-6 space-y-3">
                     <Camera className="w-12 h-12 text-slate-600 mx-auto" />
                     <p className="text-sm text-slate-400 font-medium">Camera offline or permission needed</p>
