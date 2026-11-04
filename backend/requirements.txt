@@ -13,7 +13,7 @@ slowapi==0.1.9          # rate limiting for face recognition endpoint
 # Phase 1 (IRIS — Vision Agent)
 # switched from insightface→deepface (insightface needs Visual C++ on Windows)
 onnxruntime         # ONNX runtime (also used by deepface internally)
-opencv-python==4.10.0.84
+opencv-python-headless==4.10.0.84
 numpy==1.26.4
 Pillow==10.4.0
 deepface            # face recognition — no C++ compile needed, works on Windows

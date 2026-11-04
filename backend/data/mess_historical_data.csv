@@ -1,0 +1,271 @@
+date,day_of_week,meal_type,main_dish,dish_popularity_score,is_exam_period,is_vacation_or_holiday,approved_outpasses_count,campus_resident_strength,yesterday_waste_kg,actual_headcount_served,actual_food_cooked_kg,leftover_waste_kg
+2026-08-01,Saturday,breakfast,Chole Bhature,8.3,0,1,33,117,5.87,85,32.59,1.58
+2026-08-01,Saturday,lunch,Kadi Pakoda,5.5,0,1,35,115,3.26,91,43.15,3.04
+2026-08-01,Saturday,dinner,Egg Curry & Rice,7.2,0,1,35,115,2.9,95,51.53,3.46
+2026-08-02,Sunday,breakfast,Poha,6.2,0,1,30,120,1.58,73,20.88,1.59
+2026-08-02,Sunday,lunch,Rajma Chawal,8.5,0,1,33,117,3.04,98,53.1,2.84
+2026-08-02,Sunday,dinner,Chicken/Veg Biryani,10.0,0,1,29,121,3.46,119,70.02,2.81
+2026-08-03,Monday,breakfast,Idli Sambhar,7.3,0,0,6,144,1.59,100,30.38,1.88
+2026-08-03,Monday,lunch,Aloo Gobi & Roti,5.4,0,0,7,143,2.84,110,52.48,4.34
+2026-08-03,Monday,dinner,Mix Veg Sabzi,3.9,0,0,6,144,2.81,97,46.22,4.15
+2026-08-04,Tuesday,breakfast,Upma,4.6,0,0,7,143,1.88,88,24.51,2.34
+2026-08-04,Tuesday,lunch,Kadi Pakoda,5.0,0,0,8,142,4.34,111,52.46,3.61
+2026-08-04,Tuesday,dinner,Egg Curry & Rice,7.3,0,0,7,143,4.15,125,66.73,3.81
+2026-08-05,Wednesday,breakfast,Aloo Paratha,7.6,0,0,7,143,2.34,103,35.85,2.56
+2026-08-05,Wednesday,lunch,Rajma Chawal,7.4,0,0,5,145,3.61,121,64.68,4.04
+2026-08-05,Wednesday,dinner,Khichdi,1.6,0,0,7,143,3.81,82,36.8,3.8
+2026-08-06,Thursday,breakfast,Idli Sambhar,6.7,0,0,4,146,2.56,99,29.68,1.55
+2026-08-06,Thursday,lunch,Dal Tadka & Rice,7.1,0,0,6,144,4.04,125,62.34,4.42
+2026-08-06,Thursday,dinner,Chicken/Veg Biryani,9.7,0,0,4,146,3.8,144,86.37,4.01
+2026-08-07,Friday,breakfast,Poha,5.6,0,0,5,145,1.55,100,28.19,2.38
+2026-08-07,Friday,lunch,Kadi Pakoda,5.1,0,0,5,145,4.42,112,52.75,3.6
+2026-08-07,Friday,dinner,Mix Veg Sabzi,4.3,0,0,41,109,4.01,91,43.2,3.41
+2026-08-08,Saturday,breakfast,Upma,3.9,0,1,34,116,2.38,69,19.29,1.71
+2026-08-08,Saturday,lunch,Paneer Butter Masala,9.1,0,1,30,120,3.6,105,56.7,2.96
+2026-08-08,Saturday,dinner,Dal Makhani & Naan,8.2,0,1,30,120,3.41,103,55.28,3.06
+2026-08-09,Sunday,breakfast,Aloo Paratha,8.3,0,1,31,119,1.71,73,25.37,1.57
+2026-08-09,Sunday,lunch,Aloo Gobi & Roti,5.5,0,1,35,115,2.96,91,43.3,3.39
+2026-08-09,Sunday,dinner,Chicken/Veg Biryani,9.2,0,1,29,121,3.06,119,70.15,3.29
+2026-08-10,Monday,breakfast,Idli Sambhar,7.8,0,0,6,144,1.57,104,31.6,1.92
+2026-08-10,Monday,lunch,Rajma Chawal,8.2,0,0,6,144,3.39,123,66.97,4.16
+2026-08-10,Monday,dinner,Khichdi,1.8,0,0,8,142,3.29,86,39.05,4.63
+2026-08-11,Tuesday,breakfast,Chole Bhature,8.5,0,0,5,145,1.92,110,42.91,2.45
+2026-08-11,Tuesday,lunch,Kadi Pakoda,4.7,0,0,6,144,4.16,112,52.6,4.07
+2026-08-11,Tuesday,dinner,Egg Curry & Rice,6.8,0,0,6,144,4.63,120,63.89,3.33
+2026-08-12,Wednesday,breakfast,Upma,4.6,0,0,8,142,2.45,88,24.63,2.0
+2026-08-12,Wednesday,lunch,Aloo Gobi & Roti,5.0,0,0,8,142,4.07,100,47.03,3.79
+2026-08-12,Wednesday,dinner,Dal Makhani & Naan,8.2,0,0,6,144,3.33,125,67.66,4.05
+2026-08-13,Thursday,breakfast,Aloo Paratha,7.4,0,0,4,146,2.0,108,37.88,2.59
+2026-08-13,Thursday,lunch,Dal Tadka & Rice,7.2,0,0,2,148,3.79,124,61.34,3.47
+2026-08-13,Thursday,dinner,Mix Veg Sabzi,3.8,0,0,4,146,4.05,109,51.53,4.07
+2026-08-14,Friday,breakfast,Chole Bhature,9.0,0,0,3,147,2.59,112,43.39,2.08
+2026-08-14,Friday,lunch,Kadi Pakoda,5.3,0,0,6,144,3.47,112,53.33,4.53
+2026-08-14,Friday,dinner,Khichdi,2.5,0,0,33,117,4.07,65,29.26,2.49
+2026-08-15,Saturday,breakfast,Upma,4.4,0,1,73,77,2.08,47,13.28,1.2
+2026-08-15,Saturday,lunch,Aloo Gobi & Roti,4.6,0,1,71,79,4.53,62,29.36,2.13
+2026-08-15,Saturday,dinner,Dal Makhani & Naan,8.1,0,1,75,75,2.49,64,34.17,1.56
+2026-08-16,Sunday,breakfast,Poha,6.6,0,1,92,58,1.2,35,10.01,0.68
+2026-08-16,Sunday,lunch,Rajma Chawal,7.4,0,1,95,55,2.13,46,25.25,1.46
+2026-08-16,Sunday,dinner,Chicken/Veg Biryani,9.3,0,1,93,57,1.56,56,33.53,1.54
+2026-08-17,Monday,breakfast,Chole Bhature,8.6,0,1,96,54,0.68,44,17.38,0.96
+2026-08-17,Monday,lunch,Paneer Butter Masala,8.6,0,1,96,54,1.46,45,24.55,1.53
+2026-08-17,Monday,dinner,Egg Curry & Rice,7.5,0,1,101,49,1.54,41,22.3,1.28
+2026-08-18,Tuesday,breakfast,Aloo Paratha,7.2,0,1,82,68,0.96,45,15.84,1.26
+2026-08-18,Tuesday,lunch,Kadi Pakoda,4.9,0,1,79,71,1.53,52,24.85,2.23
+2026-08-18,Tuesday,dinner,Mix Veg Sabzi,4.0,0,1,79,71,1.28,54,25.66,2.45
+2026-08-19,Wednesday,breakfast,Poha,5.4,0,0,5,145,1.26,94,26.51,2.26
+2026-08-19,Wednesday,lunch,Aloo Gobi & Roti,5.9,0,0,4,146,2.23,113,53.02,3.83
+2026-08-19,Wednesday,dinner,Khichdi,2.1,0,0,5,145,2.45,81,36.38,3.55
+2026-08-20,Thursday,breakfast,Idli Sambhar,6.9,0,0,7,143,2.26,104,31.33,1.98
+2026-08-20,Thursday,lunch,Rajma Chawal,7.2,0,0,7,143,3.83,121,64.25,3.87
+2026-08-20,Thursday,dinner,Egg Curry & Rice,7.5,0,0,5,145,3.55,126,67.65,3.63
+2026-08-21,Friday,breakfast,Aloo Paratha,8.0,0,0,4,146,1.98,101,35.22,2.39
+2026-08-21,Friday,lunch,Dal Tadka & Rice,6.2,0,0,7,143,3.87,120,60.15,5.45
+2026-08-21,Friday,dinner,Chicken/Veg Biryani,9.1,0,0,38,112,3.63,108,64.05,3.59
+2026-08-22,Saturday,breakfast,Chole Bhature,9.1,0,1,30,120,2.39,97,37.88,1.82
+2026-08-22,Saturday,lunch,Paneer Butter Masala,8.8,0,1,35,115,5.45,97,51.83,2.48
+2026-08-22,Saturday,dinner,Mix Veg Sabzi,4.3,0,1,30,120,3.59,98,46.41,3.74
+2026-08-23,Sunday,breakfast,Upma,4.4,0,1,32,118,1.82,72,20.29,1.68
+2026-08-23,Sunday,lunch,Aloo Gobi & Roti,4.6,0,1,27,123,2.48,91,43.33,3.62
+2026-08-23,Sunday,dinner,Chicken/Veg Biryani,9.5,0,1,31,119,3.74,117,68.87,2.86
+2026-08-24,Monday,breakfast,Aloo Paratha,8.4,0,0,4,146,1.68,110,38.4,2.5
+2026-08-24,Monday,lunch,Rajma Chawal,6.9,0,0,6,144,3.62,118,62.5,3.19
+2026-08-24,Monday,dinner,Dal Makhani & Naan,7.8,0,0,5,145,2.86,127,68.14,3.5
+2026-08-25,Tuesday,breakfast,Poha,7.0,0,0,3,147,2.5,105,29.06,1.78
+2026-08-25,Tuesday,lunch,Paneer Butter Masala,9.1,0,0,4,146,3.19,126,68.38,3.48
+2026-08-25,Tuesday,dinner,Egg Curry & Rice,7.3,0,0,4,146,3.5,124,66.51,4.34
+2026-08-26,Wednesday,breakfast,Upma,4.4,0,0,2,148,1.78,96,26.98,2.53
+2026-08-26,Wednesday,lunch,Kadi Pakoda,4.9,0,0,4,146,3.48,108,50.79,4.48
+2026-08-26,Wednesday,dinner,Mix Veg Sabzi,3.3,0,0,3,147,4.34,108,50.54,4.44
+2026-08-27,Thursday,breakfast,Aloo Paratha,7.7,0,0,8,142,2.53,97,33.72,2.19
+2026-08-27,Thursday,lunch,Aloo Gobi & Roti,5.7,0,0,6,144,4.48,114,53.97,3.71
+2026-08-27,Thursday,dinner,Dal Makhani & Naan,8.1,0,0,6,144,4.44,125,67.92,4.72
+2026-08-28,Friday,breakfast,Chole Bhature,8.7,0,0,4,146,2.19,113,44.04,1.95
+2026-08-28,Friday,lunch,Dal Tadka & Rice,6.0,0,0,6,144,3.71,118,58.22,3.93
+2026-08-28,Friday,dinner,Chicken/Veg Biryani,9.0,0,0,37,113,4.72,111,64.97,2.8
+2026-08-29,Saturday,breakfast,Poha,5.9,0,1,44,106,1.95,70,19.73,1.59
+2026-08-29,Saturday,lunch,Rajma Chawal,7.5,0,1,38,112,3.93,96,51.42,3.17
+2026-08-29,Saturday,dinner,Egg Curry & Rice,6.9,0,1,40,110,2.8,92,49.42,3.13
+2026-08-30,Sunday,breakfast,Aloo Paratha,7.3,0,1,27,123,1.59,75,25.88,1.54
+2026-08-30,Sunday,lunch,Paneer Butter Masala,9.1,0,1,25,125,3.17,110,59.5,3.25
+2026-08-30,Sunday,dinner,Khichdi,2.2,0,1,27,123,3.13,77,34.65,3.85
+2026-08-31,Monday,breakfast,Upma,4.4,0,0,5,145,1.54,93,25.9,2.17
+2026-08-31,Monday,lunch,Aloo Gobi & Roti,5.1,0,0,6,144,3.25,106,50.01,3.64
+2026-08-31,Monday,dinner,Dal Makhani & Naan,7.1,0,0,6,144,3.85,123,65.99,4.28
+2026-09-01,Tuesday,breakfast,Chole Bhature,8.9,0,0,3,147,2.17,116,45.12,2.41
+2026-09-01,Tuesday,lunch,Rajma Chawal,7.3,0,0,2,148,3.64,130,70.09,5.25
+2026-09-01,Tuesday,dinner,Egg Curry & Rice,7.2,0,0,4,146,4.28,126,67.96,4.43
+2026-09-02,Wednesday,breakfast,Idli Sambhar,7.0,0,0,7,143,2.41,93,28.04,1.69
+2026-09-02,Wednesday,lunch,Paneer Butter Masala,8.8,0,0,6,144,5.25,124,66.53,3.27
+2026-09-02,Wednesday,dinner,Mix Veg Sabzi,4.3,0,0,7,143,4.43,115,54.01,4.19
+2026-09-03,Thursday,breakfast,Aloo Paratha,8.3,0,0,7,143,1.69,106,36.43,1.62
+2026-09-03,Thursday,lunch,Dal Tadka & Rice,6.3,0,0,7,143,3.27,113,56.76,4.95
+2026-09-03,Thursday,dinner,Chicken/Veg Biryani,9.4,0,0,5,145,4.19,140,82.54,3.81
+2026-09-04,Friday,breakfast,Upma,4.3,0,0,4,146,1.62,98,27.7,2.76
+2026-09-04,Friday,lunch,Aloo Gobi & Roti,5.6,0,0,4,146,4.95,105,49.66,4.36
+2026-09-04,Friday,dinner,Egg Curry & Rice,7.3,0,0,28,122,3.81,101,53.88,2.96
+2026-09-05,Saturday,breakfast,Idli Sambhar,6.4,0,1,43,107,2.76,68,20.53,1.33
+2026-09-05,Saturday,lunch,Kadi Pakoda,5.4,0,1,43,107,4.36,81,38.14,2.79
+2026-09-05,Saturday,dinner,Khichdi,2.2,0,1,38,112,2.96,68,30.9,3.02
+2026-09-06,Sunday,breakfast,Poha,5.6,0,1,33,117,1.33,71,19.98,1.65
+2026-09-06,Sunday,lunch,Dal Tadka & Rice,6.0,0,1,29,121,2.79,98,48.64,3.61
+2026-09-06,Sunday,dinner,Chicken/Veg Biryani,9.3,0,1,34,116,3.02,114,68.06,3.23
+2026-09-07,Monday,breakfast,Aloo Paratha,7.8,0,0,3,147,1.65,109,37.98,2.64
+2026-09-07,Monday,lunch,Rajma Chawal,7.9,0,0,3,147,3.61,128,69.36,3.77
+2026-09-07,Monday,dinner,Dal Makhani & Naan,7.9,0,0,5,145,3.23,129,69.45,4.15
+2026-09-08,Tuesday,breakfast,Idli Sambhar,6.5,0,0,5,145,2.64,98,29.77,2.43
+2026-09-08,Tuesday,lunch,Kadi Pakoda,5.4,0,0,6,144,3.77,106,49.78,4.16
+2026-09-08,Tuesday,dinner,Mix Veg Sabzi,4.2,0,0,6,144,4.15,112,51.9,4.36
+2026-09-09,Wednesday,breakfast,Poha,6.3,0,0,8,142,2.43,97,27.23,1.86
+2026-09-09,Wednesday,lunch,Paneer Butter Masala,8.3,0,0,7,143,4.16,122,65.57,2.89
+2026-09-09,Wednesday,dinner,Khichdi,1.7,0,0,6,144,4.36,80,35.68,3.39
+2026-09-10,Thursday,breakfast,Chole Bhature,8.7,0,0,7,143,1.86,112,44.08,2.41
+2026-09-10,Thursday,lunch,Rajma Chawal,8.0,0,0,7,143,2.89,123,65.61,3.19
+2026-09-10,Thursday,dinner,Chicken/Veg Biryani,10.0,0,0,7,143,3.39,141,83.09,3.15
+2026-09-11,Friday,breakfast,Aloo Paratha,8.2,0,0,6,144,2.41,97,33.84,2.17
+2026-09-11,Friday,lunch,Aloo Gobi & Roti,5.2,0,0,9,141,3.19,111,53.24,4.72
+2026-09-11,Friday,dinner,Dal Makhani & Naan,7.5,0,0,30,120,3.15,98,53.71,3.19
+2026-09-12,Saturday,breakfast,Poha,6.1,0,1,42,108,2.17,70,19.58,1.44
+2026-09-12,Saturday,lunch,Kadi Pakoda,5.4,0,1,40,110,4.72,92,42.64,3.32
+2026-09-12,Saturday,dinner,Egg Curry & Rice,7.7,0,1,41,109,3.19,97,52.67,3.22
+2026-09-13,Sunday,breakfast,Upma,5.0,0,1,32,118,1.44,69,19.51,1.69
+2026-09-13,Sunday,lunch,Dal Tadka & Rice,7.0,0,1,32,118,3.32,91,44.95,2.86
+2026-09-13,Sunday,dinner,Chicken/Veg Biryani,8.8,0,1,30,120,3.22,118,69.62,3.03
+2026-09-14,Monday,breakfast,Idli Sambhar,7.1,0,0,5,145,1.69,103,31.21,1.83
+2026-09-14,Monday,lunch,Rajma Chawal,7.9,0,0,5,145,2.86,125,66.34,3.38
+2026-09-14,Monday,dinner,Khichdi,2.2,0,0,4,146,3.03,89,40.11,3.3
+2026-09-15,Tuesday,breakfast,Aloo Paratha,7.1,1,0,9,141,1.83,98,33.91,2.08
+2026-09-15,Tuesday,lunch,Aloo Gobi & Roti,5.3,1,0,8,142,3.38,91,43.03,3.24
+2026-09-15,Tuesday,dinner,Egg Curry & Rice,6.8,1,0,9,141,3.3,116,62.53,4.61
+2026-09-16,Wednesday,breakfast,Chole Bhature,7.9,1,0,5,145,2.08,113,43.75,2.56
+2026-09-16,Wednesday,lunch,Paneer Butter Masala,9.2,1,0,5,145,3.24,111,60.08,3.17
+2026-09-16,Wednesday,dinner,Mix Veg Sabzi,4.1,1,0,6,144,4.61,108,50.78,4.04
+2026-09-17,Thursday,breakfast,Poha,6.5,1,0,8,142,2.56,91,25.35,1.78
+2026-09-17,Thursday,lunch,Kadi Pakoda,5.2,1,0,8,142,3.17,99,46.81,3.62
+2026-09-17,Thursday,dinner,Dal Makhani & Naan,8.0,1,0,8,142,4.04,124,66.7,3.35
+2026-09-18,Friday,breakfast,Aloo Paratha,7.7,1,0,6,144,1.78,96,32.98,1.78
+2026-09-18,Friday,lunch,Aloo Gobi & Roti,4.7,1,0,5,145,3.62,93,44.29,3.79
+2026-09-18,Friday,dinner,Egg Curry & Rice,7.4,1,0,25,125,3.35,109,57.69,2.9
+2026-09-19,Saturday,breakfast,Upma,4.8,1,1,20,130,1.78,81,22.62,1.99
+2026-09-19,Saturday,lunch,Dal Tadka & Rice,6.5,1,1,20,130,3.79,94,46.25,3.14
+2026-09-19,Saturday,dinner,Chicken/Veg Biryani,9.4,1,1,21,129,2.9,122,72.47,3.19
+2026-09-20,Sunday,breakfast,Chole Bhature,8.6,1,1,20,130,1.99,81,31.48,1.74
+2026-09-20,Sunday,lunch,Kadi Pakoda,5.5,1,1,21,129,3.14,88,42.0,3.49
+2026-09-20,Sunday,dinner,Chicken/Veg Biryani,10.0,1,1,24,126,3.19,124,73.9,2.94
+2026-09-21,Monday,breakfast,Idli Sambhar,7.1,1,0,5,145,1.74,98,29.58,1.59
+2026-09-21,Monday,lunch,Aloo Gobi & Roti,5.1,1,0,4,146,3.49,93,44.31,3.34
+2026-09-21,Monday,dinner,Mix Veg Sabzi,3.8,1,0,5,145,2.94,106,50.16,4.6
+2026-09-22,Tuesday,breakfast,Poha,5.4,0,0,8,142,1.59,95,26.85,2.0
+2026-09-22,Tuesday,lunch,Rajma Chawal,7.2,0,0,8,142,3.34,119,64.28,4.41
+2026-09-22,Tuesday,dinner,Dal Makhani & Naan,8.5,0,0,7,143,4.6,126,67.48,3.31
+2026-09-23,Wednesday,breakfast,Aloo Paratha,8.0,0,0,5,145,2.0,104,36.02,2.18
+2026-09-23,Wednesday,lunch,Kadi Pakoda,4.5,0,0,3,147,4.41,114,53.64,4.32
+2026-09-23,Wednesday,dinner,Khichdi,2.3,0,0,5,145,3.31,88,39.72,3.59
+2026-09-24,Thursday,breakfast,Upma,4.1,0,0,4,146,2.18,91,25.66,2.6
+2026-09-24,Thursday,lunch,Dal Tadka & Rice,6.2,0,0,4,146,4.32,115,56.29,3.47
+2026-09-24,Thursday,dinner,Mix Veg Sabzi,4.2,0,0,3,147,3.59,116,54.59,4.89
+2026-09-25,Friday,breakfast,Idli Sambhar,6.8,0,0,7,143,2.6,95,28.68,1.95
+2026-09-25,Friday,lunch,Paneer Butter Masala,9.4,0,0,7,143,3.47,123,64.94,2.22
+2026-09-25,Friday,dinner,Dal Makhani & Naan,7.7,0,0,41,109,4.89,95,51.12,2.64
+2026-09-26,Saturday,breakfast,Poha,5.9,0,1,32,118,1.95,76,21.5,1.82
+2026-09-26,Saturday,lunch,Kadi Pakoda,4.6,0,1,28,122,2.22,92,43.72,3.91
+2026-09-26,Saturday,dinner,Egg Curry & Rice,7.4,0,1,32,118,2.64,104,55.85,3.01
+2026-09-27,Sunday,breakfast,Upma,4.5,0,1,31,119,1.82,69,19.47,1.73
+2026-09-27,Sunday,lunch,Aloo Gobi & Roti,5.6,0,1,32,118,3.91,93,43.85,2.93
+2026-09-27,Sunday,dinner,Chicken/Veg Biryani,9.5,0,1,32,118,3.01,116,68.81,3.1
+2026-09-28,Monday,breakfast,Aloo Paratha,6.9,0,0,5,145,1.73,98,33.88,2.5
+2026-09-28,Monday,lunch,Paneer Butter Masala,8.9,0,0,5,145,2.93,122,65.84,3.25
+2026-09-28,Monday,dinner,Mix Veg Sabzi,3.8,0,0,3,147,3.1,107,51.1,4.46
+2026-09-29,Tuesday,breakfast,Poha,6.1,0,0,2,148,2.5,102,28.61,1.93
+2026-09-29,Tuesday,lunch,Kadi Pakoda,4.5,0,0,2,148,3.25,113,53.66,4.74
+2026-09-29,Tuesday,dinner,Egg Curry & Rice,7.1,0,0,2,148,4.46,125,67.81,5.08
+2026-09-30,Wednesday,breakfast,Chole Bhature,8.7,0,0,3,147,1.93,116,45.39,2.27
+2026-09-30,Wednesday,lunch,Aloo Gobi & Roti,5.7,0,0,3,147,4.74,118,55.75,4.38
+2026-09-30,Wednesday,dinner,Chicken/Veg Biryani,9.4,0,0,4,146,5.08,144,83.82,2.86
+2026-10-01,Thursday,breakfast,Idli Sambhar,7.1,0,0,7,143,2.27,94,28.39,1.85
+2026-10-01,Thursday,lunch,Rajma Chawal,7.6,0,0,6,144,4.38,125,67.05,4.35
+2026-10-01,Thursday,dinner,Dal Makhani & Naan,7.7,0,0,7,143,2.86,121,64.88,3.86
+2026-10-02,Friday,breakfast,Upma,4.9,0,0,4,146,1.85,101,28.26,2.11
+2026-10-02,Friday,lunch,Dal Tadka & Rice,6.1,0,0,6,144,4.35,118,57.9,4.44
+2026-10-02,Friday,dinner,Khichdi,1.9,0,0,30,120,3.86,74,33.38,3.68
+2026-10-03,Saturday,breakfast,Chole Bhature,8.8,0,1,37,113,2.11,86,33.04,1.43
+2026-10-03,Saturday,lunch,Kadi Pakoda,4.8,0,1,40,110,4.44,87,41.12,3.44
+2026-10-03,Saturday,dinner,Egg Curry & Rice,7.3,0,1,41,109,3.68,89,48.06,3.56
+2026-10-04,Sunday,breakfast,Aloo Paratha,8.2,0,1,41,109,1.43,71,24.68,1.48
+2026-10-04,Sunday,lunch,Rajma Chawal,7.3,0,1,35,115,3.44,102,54.71,3.67
+2026-10-04,Sunday,dinner,Chicken/Veg Biryani,9.3,0,1,41,109,3.56,107,62.63,2.64
+2026-10-05,Monday,breakfast,Upma,4.2,0,0,9,141,1.48,94,26.3,2.45
+2026-10-05,Monday,lunch,Paneer Butter Masala,9.2,0,0,9,141,3.67,124,66.7,3.51
+2026-10-05,Monday,dinner,Khichdi,1.8,0,0,9,141,2.64,85,38.48,3.67
+2026-10-06,Tuesday,breakfast,Idli Sambhar,6.9,0,0,3,147,2.45,108,32.68,2.27
+2026-10-06,Tuesday,lunch,Dal Tadka & Rice,6.6,0,0,5,145,3.51,117,57.09,3.0
+2026-10-06,Tuesday,dinner,Dal Makhani & Naan,8.0,0,0,4,146,3.67,126,67.3,3.64
+2026-10-07,Wednesday,breakfast,Aloo Paratha,7.8,0,0,5,145,2.27,105,36.62,2.11
+2026-10-07,Wednesday,lunch,Rajma Chawal,7.1,0,0,6,144,3.0,119,63.55,3.21
+2026-10-07,Wednesday,dinner,Egg Curry & Rice,7.1,0,0,4,146,3.64,129,69.31,4.26
+2026-10-08,Thursday,breakfast,Poha,5.7,0,0,4,146,2.11,99,27.32,1.53
+2026-10-08,Thursday,lunch,Kadi Pakoda,5.3,0,0,6,144,3.21,114,53.59,4.37
+2026-10-08,Thursday,dinner,Chicken/Veg Biryani,9.5,0,0,6,144,4.26,142,84.49,3.52
+2026-10-09,Friday,breakfast,Upma,4.5,0,0,7,143,1.53,91,25.87,2.69
+2026-10-09,Friday,lunch,Dal Tadka & Rice,6.7,0,0,6,144,4.37,113,55.37,2.97
+2026-10-09,Friday,dinner,Mix Veg Sabzi,3.8,0,0,27,123,3.52,92,42.87,3.19
+2026-10-10,Saturday,breakfast,Aloo Paratha,7.8,0,1,36,114,2.69,73,25.66,1.76
+2026-10-10,Saturday,lunch,Paneer Butter Masala,9.1,0,1,34,116,2.97,99,53.17,2.6
+2026-10-10,Saturday,dinner,Khichdi,1.5,0,1,33,117,3.19,73,32.77,4.04
+2026-10-11,Sunday,breakfast,Chole Bhature,8.8,0,1,25,125,1.76,80,31.24,1.46
+2026-10-11,Sunday,lunch,Rajma Chawal,7.3,0,1,27,123,2.6,101,53.99,2.61
+2026-10-11,Sunday,dinner,Dal Makhani & Naan,8.0,0,1,23,127,4.04,111,58.86,3.28
+2026-10-12,Monday,breakfast,Upma,3.9,0,0,6,144,1.46,95,26.68,2.06
+2026-10-12,Monday,lunch,Dal Tadka & Rice,6.8,0,0,6,144,2.61,121,59.83,3.66
+2026-10-12,Monday,dinner,Egg Curry & Rice,7.5,0,0,6,144,3.28,128,68.99,4.01
+2026-10-13,Tuesday,breakfast,Idli Sambhar,6.4,0,0,4,146,2.06,103,31.15,2.01
+2026-10-13,Tuesday,lunch,Paneer Butter Masala,8.9,0,0,4,146,3.66,123,64.69,2.98
+2026-10-13,Tuesday,dinner,Mix Veg Sabzi,3.6,0,0,2,148,4.01,111,52.37,4.7
+2026-10-14,Wednesday,breakfast,Aloo Paratha,7.6,0,0,4,146,2.01,101,34.7,2.02
+2026-10-14,Wednesday,lunch,Rajma Chawal,7.8,0,0,4,146,2.98,115,61.66,3.14
+2026-10-14,Wednesday,dinner,Chicken/Veg Biryani,9.7,0,0,5,145,4.7,143,82.58,2.65
+2026-10-15,Thursday,breakfast,Upma,5.1,0,0,6,144,2.02,91,25.53,2.01
+2026-10-15,Thursday,lunch,Kadi Pakoda,4.9,0,0,7,143,3.14,106,50.39,4.95
+2026-10-15,Thursday,dinner,Egg Curry & Rice,6.5,0,0,5,145,2.65,118,63.84,3.94
+2026-10-16,Friday,breakfast,Idli Sambhar,6.7,0,0,2,148,2.01,105,31.69,2.33
+2026-10-16,Friday,lunch,Dal Tadka & Rice,6.9,0,0,7,143,4.95,114,56.3,4.05
+2026-10-16,Friday,dinner,Khichdi,1.9,0,0,32,118,3.94,72,32.29,3.12
+2026-10-17,Saturday,breakfast,Chole Bhature,8.6,0,1,36,114,2.33,82,32.09,1.72
+2026-10-17,Saturday,lunch,Rajma Chawal,7.8,0,1,37,113,4.05,97,51.88,2.48
+2026-10-17,Saturday,dinner,Dal Makhani & Naan,7.9,0,1,41,109,3.12,94,50.72,2.6
+2026-10-18,Sunday,breakfast,Poha,6.0,0,1,27,123,1.72,75,21.11,1.56
+2026-10-18,Sunday,lunch,Aloo Gobi & Roti,5.4,0,1,29,121,2.48,90,42.33,2.81
+2026-10-18,Sunday,dinner,Mix Veg Sabzi,4.0,0,1,29,121,2.6,94,44.98,4.53
+2026-10-19,Monday,breakfast,Idli Sambhar,7.0,0,0,4,146,1.56,98,29.61,2.05
+2026-10-19,Monday,lunch,Dal Tadka & Rice,6.7,0,0,4,146,2.81,119,59.47,4.06
+2026-10-19,Monday,dinner,Khichdi,1.6,0,0,5,145,4.53,93,41.93,4.1
+2026-10-20,Tuesday,breakfast,Upma,5.1,1,0,6,144,2.05,93,26.01,1.84
+2026-10-20,Tuesday,lunch,Paneer Butter Masala,8.4,1,0,7,143,4.06,108,57.7,2.82
+2026-10-20,Tuesday,dinner,Dal Makhani & Naan,7.5,1,0,8,142,4.1,123,65.93,3.77
+2026-10-21,Wednesday,breakfast,Chole Bhature,8.5,1,0,9,141,1.84,113,43.92,2.27
+2026-10-21,Wednesday,lunch,Kadi Pakoda,5.0,1,0,8,142,2.82,96,45.59,4.14
+2026-10-21,Wednesday,dinner,Egg Curry & Rice,6.9,1,0,7,143,3.77,121,64.18,3.55
+2026-10-22,Thursday,breakfast,Idli Sambhar,6.6,1,0,7,143,2.27,95,29.26,2.01
+2026-10-22,Thursday,lunch,Aloo Gobi & Roti,5.4,1,0,9,141,4.14,96,44.83,3.24
+2026-10-22,Thursday,dinner,Mix Veg Sabzi,4.2,1,0,9,141,3.55,109,52.0,4.72
+2026-10-23,Friday,breakfast,Poha,5.5,1,0,6,144,2.01,104,28.99,2.52
+2026-10-23,Friday,lunch,Rajma Chawal,7.4,1,0,5,145,3.24,94,50.22,2.6
+2026-10-23,Friday,dinner,Khichdi,2.1,1,0,24,126,4.72,76,34.05,3.41
+2026-10-24,Saturday,breakfast,Aloo Paratha,8.1,1,1,28,122,2.52,87,29.97,1.55
+2026-10-24,Saturday,lunch,Kadi Pakoda,5.2,1,1,24,126,2.6,86,40.76,3.18
+2026-10-24,Saturday,dinner,Egg Curry & Rice,6.9,1,1,23,127,3.41,105,56.2,3.89
+2026-10-25,Sunday,breakfast,Idli Sambhar,6.6,1,1,20,130,1.55,79,23.96,1.49
+2026-10-25,Sunday,lunch,Aloo Gobi & Roti,5.8,1,1,22,128,3.18,87,41.52,3.25
+2026-10-25,Sunday,dinner,Chicken/Veg Biryani,9.1,1,1,23,127,3.89,125,74.26,3.43
+2026-10-26,Monday,breakfast,Poha,5.9,1,0,6,144,1.49,97,27.24,2.02
+2026-10-26,Monday,lunch,Rajma Chawal,7.6,1,0,5,145,3.25,114,60.96,3.4
+2026-10-26,Monday,dinner,Khichdi,2.2,1,0,5,145,3.43,84,37.29,3.11
+2026-10-27,Tuesday,breakfast,Chole Bhature,8.8,0,0,3,147,2.02,114,43.96,1.94
+2026-10-27,Tuesday,lunch,Kadi Pakoda,5.0,0,0,5,145,3.4,110,52.07,3.92
+2026-10-27,Tuesday,dinner,Egg Curry & Rice,7.3,0,0,4,146,3.11,128,68.99,4.3
+2026-10-28,Wednesday,breakfast,Aloo Paratha,7.2,0,0,4,146,1.94,107,37.54,2.9
+2026-10-28,Wednesday,lunch,Aloo Gobi & Roti,4.9,0,0,6,144,3.92,108,51.05,4.68
+2026-10-28,Wednesday,dinner,Chicken/Veg Biryani,9.1,0,0,4,146,4.3,142,83.29,3.93
+2026-10-29,Thursday,breakfast,Poha,5.9,0,0,6,144,2.9,92,25.67,1.69
+2026-10-29,Thursday,lunch,Paneer Butter Masala,9.1,0,0,6,144,4.68,133,71.09,3.27
+2026-10-29,Thursday,dinner,Dal Makhani & Naan,7.8,0,0,4,146,3.93,124,66.68,3.49
