@@ -19,6 +19,7 @@ numpy==1.26.4
 Pillow==10.4.0
 deepface            # face recognition — no C++ compile needed, works on Windows
 tf-keras            # deepface backend
+werkzeug>=3.0.0     # required by deepface internally
 
 # Phase 2 (SENTINEL — Attendance Agent)
 apscheduler==3.10.4
