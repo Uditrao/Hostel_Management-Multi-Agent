@@ -37,6 +37,17 @@ def get_embedding(image_bgr: np.ndarray) -> Optional[list[float]]:
     Returns None if no face is detected.
     """
     try:
+        # Enforce TensorFlow thread and memory bounds before importing
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+        try:
+            import tensorflow as tf
+            tf.config.set_visible_devices([], 'GPU')
+            tf.config.threading.set_intra_op_parallelism_threads(1)
+            tf.config.threading.set_inter_op_parallelism_threads(1)
+        except Exception:
+            pass
         from deepface import DeepFace  # type: ignore  # lazy import — loads TF once
     except ImportError as exc:
         raise RuntimeError(
