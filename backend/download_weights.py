@@ -1,30 +1,43 @@
 """
 download_weights.py
-Pre-downloads Facenet512 model weights during Render build time
-so that live API requests never hang on downloads.
+Pre-downloads the lightweight FaceNet ONNX model during Render build time
+so that live API requests never hang on downloads or trigger timeouts.
 """
 import os
 import sys
-import numpy as np
+import urllib.request
+
+MODEL_URL = "https://huggingface.co/haikalmumtaz/facenet-onnx/resolve/main/facenet.onnx"
+TARGET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agents", "iris", "models")
+TARGET_PATH = os.path.join(TARGET_DIR, "facenet.onnx")
+MIN_BYTES = 90 * 1024 * 1024
+
 
 def pre_download():
-    print("Pre-downloading Facenet512 model weights for production...")
+    print(f"Pre-downloading FaceNet ONNX model from {MODEL_URL}...")
+    os.makedirs(TARGET_DIR, exist_ok=True)
+
+    if os.path.exists(TARGET_PATH) and os.path.getsize(TARGET_PATH) >= MIN_BYTES:
+        print(f"Model already cached at {TARGET_PATH} (size: {os.path.getsize(TARGET_PATH)} bytes).")
+        return
+
+    temp_path = f"{TARGET_PATH}.tmp"
     try:
-        from deepface import DeepFace
-        dummy_img = np.zeros((224, 224, 3), dtype=np.uint8)
-        DeepFace.represent(
-            img_path=dummy_img,
-            model_name="Facenet512",
-            detector_backend="opencv",
-            enforce_detection=False,
-            align=False
-        )
-        print("Facenet512 weights successfully downloaded and cached on disk.")
-    except Exception as e:
-        print(f"Warning: Model pre-download encountered: {e}")
-        # Don't fail build if network is slow; runtime will fall back to auto-download
+        urllib.request.urlretrieve(MODEL_URL, temp_path)
+        if os.path.exists(temp_path) and os.path.getsize(temp_path) >= MIN_BYTES:
+            os.replace(temp_path, TARGET_PATH)
+            print(f"FaceNet ONNX model successfully downloaded ({os.path.getsize(TARGET_PATH)} bytes).")
+        else:
+            print("Warning: Downloaded file size is smaller than expected.")
+    except Exception as exc:
+        print(f"Warning: Pre-download encountered {exc}; runtime will auto-download.")
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
         sys.exit(0)
+
 
 if __name__ == "__main__":
     pre_download()
-
