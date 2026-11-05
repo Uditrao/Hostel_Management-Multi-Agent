@@ -10,7 +10,7 @@ import urllib.request
 MODEL_URL = "https://huggingface.co/haikalmumtaz/facenet-onnx/resolve/main/facenet.onnx"
 TARGET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agents", "iris", "models")
 TARGET_PATH = os.path.join(TARGET_DIR, "facenet.onnx")
-MIN_BYTES = 90 * 1024 * 1024
+MIN_BYTES = 50 * 1024 * 1024  # Model is ~89.6 MB (93,959,206 bytes)
 
 
 def pre_download():
