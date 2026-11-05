@@ -26,6 +26,28 @@ logger = logging.getLogger("hostel.iris.engine")
 _MODEL_NAME       = "Facenet512"   # 512-d embeddings — best accuracy/size trade-off
 _DETECTOR_BACKEND = "opencv"       # fast, no extra install — part of opencv-python
 
+# Global singleton model reference to load once into memory
+_GLOBAL_MODEL = None
+
+def _get_model():
+    global _GLOBAL_MODEL
+    if _GLOBAL_MODEL is None:
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+        try:
+            import tensorflow as tf
+            tf.config.set_visible_devices([], 'GPU')
+            tf.config.threading.set_intra_op_parallelism_threads(1)
+            tf.config.threading.set_inter_op_parallelism_threads(1)
+        except Exception:
+            pass
+        from deepface import DeepFace
+        logger.info("IRIS: Loading Facenet512 model into memory once...")
+        _GLOBAL_MODEL = DeepFace.build_model(_MODEL_NAME)
+        logger.info("IRIS: Facenet512 model ready.")
+    return _GLOBAL_MODEL
+
 
 # ── Core helpers ──────────────────────────────────────────────────────────────
 
@@ -37,18 +59,7 @@ def get_embedding(image_bgr: np.ndarray) -> Optional[list[float]]:
     Returns None if no face is detected.
     """
     try:
-        # Enforce TensorFlow thread and memory bounds before importing
-        import os
-        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-        try:
-            import tensorflow as tf
-            tf.config.set_visible_devices([], 'GPU')
-            tf.config.threading.set_intra_op_parallelism_threads(1)
-            tf.config.threading.set_inter_op_parallelism_threads(1)
-        except Exception:
-            pass
-        from deepface import DeepFace  # type: ignore  # lazy import — loads TF once
+        from deepface import DeepFace  # type: ignore
     except ImportError as exc:
         raise RuntimeError(
             "deepface is not installed. Run: pip install deepface tf-keras"
@@ -56,12 +67,15 @@ def get_embedding(image_bgr: np.ndarray) -> Optional[list[float]]:
 
     # DeepFace.represent() accepts a BGR numpy array directly
     try:
+        model = _get_model()
+        from deepface import DeepFace
         results = DeepFace.represent(
             img_path=image_bgr,
             model_name=_MODEL_NAME,
+            model=model,
             detector_backend=_DETECTOR_BACKEND,
-            enforce_detection=False,  # robust across angles & lighting
-            align=True,               # align face for better accuracy
+            enforce_detection=False,
+            align=True,
         )
     except ValueError:
         # enforce_detection=True raises ValueError when no face is detected
