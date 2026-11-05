@@ -29,7 +29,7 @@ _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _MODELS_DIR = os.path.join(_CURRENT_DIR, "models")
 _MODEL_PATH = os.path.join(_MODELS_DIR, "facenet.onnx")
 _MODEL_URL = "https://huggingface.co/haikalmumtaz/facenet-onnx/resolve/main/facenet.onnx"
-_MIN_MODEL_BYTES = 90 * 1024 * 1024  # Expected size ~94 MB
+_MIN_MODEL_BYTES = 50 * 1024 * 1024  # Model is ~89.6 MB (93,959,206 bytes)
 
 # Global singleton sessions
 _ORT_SESSION = None
