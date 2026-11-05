@@ -49,7 +49,7 @@ def get_embedding(image_bgr: np.ndarray) -> Optional[list[float]]:
             img_path=image_bgr,
             model_name=_MODEL_NAME,
             detector_backend=_DETECTOR_BACKEND,
-            enforce_detection=True,   # raises ValueError if no face found
+            enforce_detection=False,  # robust across angles & lighting
             align=True,               # align face for better accuracy
         )
     except ValueError:
