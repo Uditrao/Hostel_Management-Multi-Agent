@@ -77,6 +77,7 @@ export const irisApi = {
   recognizeFace: (formData) =>
     api.post('/iris/recognize', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000, // 2 minutes for initial model download/warm-up
     }),
 }
 
