@@ -33,6 +33,7 @@ def _get_model():
     global _GLOBAL_MODEL
     if _GLOBAL_MODEL is None:
         import os
+        import gc
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
         os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
         try:
@@ -45,6 +46,7 @@ def _get_model():
         from deepface import DeepFace
         logger.info("IRIS: Loading Facenet512 model into memory once...")
         _GLOBAL_MODEL = DeepFace.build_model(_MODEL_NAME)
+        gc.collect()
         logger.info("IRIS: Facenet512 model ready.")
     return _GLOBAL_MODEL
 
@@ -65,12 +67,19 @@ def get_embedding(image_bgr: np.ndarray) -> Optional[list[float]]:
             "deepface is not installed. Run: pip install deepface tf-keras"
         ) from exc
 
-    # DeepFace.represent() accepts a BGR numpy array directly
+    # Downscale frame if larger than 640px to reduce peak RAM usage during detection
     try:
+        h, w = image_bgr.shape[:2]
+        if max(h, w) > 640:
+            scale = 640.0 / max(h, w)
+            processed_img = cv2.resize(image_bgr, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+        else:
+            processed_img = image_bgr
+
         model = _get_model()
         from deepface import DeepFace
         results = DeepFace.represent(
-            img_path=image_bgr,
+            img_path=processed_img,
             model_name=_MODEL_NAME,
             model=model,
             detector_backend=_DETECTOR_BACKEND,
