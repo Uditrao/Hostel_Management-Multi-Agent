@@ -5,14 +5,6 @@ Agents: IRIS | SENTINEL | NOURISH | FIXR | HERALD | AUTH (Phase 6)
 
 import os
 import logging
-
-# ── Low-Memory & CPU-Only Configuration for Cloud Deployments (Render 512MB RAM) ──
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"           # Disable GPU scanning
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"            # Mute TensorFlow C++ logs
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"           # Disable memory-heavy oneDNN
-os.environ["OMP_NUM_THREADS"] = "1"                 # Limit OpenMP threads
-os.environ["TF_NUM_INTRAOP_THREADS"] = "1"          # Limit intra-op threads
-os.environ["TF_NUM_INTEROP_THREADS"] = "1"          # Limit inter-op threads
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -44,8 +36,22 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("⚠️  Supabase connection FAILED — check your .env keys.")
 
-    # IRIS loads on-demand with restricted memory to avoid 512MB RAM exhaustion
-    logger.info("IRIS: Low-memory CPU face engine configured.")
+    # Warm up IRIS face engine in background thread (TF Facenet512 ~10s cold-start)
+    try:
+        import threading
+        import numpy as np
+        def _warmup_iris():
+            try:
+                from agents.iris.face_engine import get_embedding
+                dummy = np.zeros((224, 224, 3), dtype=np.uint8)
+                get_embedding(dummy)
+                logger.info("IRIS: Facenet512 model warmed up and ready.")
+            except Exception as exc:
+                logger.warning("IRIS: warm-up skipped — %s", exc)
+        threading.Thread(target=_warmup_iris, daemon=True).start()
+        logger.info("IRIS: warming up face engine in background ...")
+    except Exception as exc:
+        logger.warning("Could not start IRIS warm-up thread: %s", exc)
 
     # Start all background schedulers (SENTINEL + HERALD)
     try:
