@@ -2,17 +2,17 @@
  * HomePage.jsx
  * ============
  * Distinctive Architectural / Monochromatic Landing Interface.
- * Built with sharp grid blocks, high-contrast black/charcoal/off-white palette,
- * technical HUD elements, and custom brand identity.
+ * Enhanced with 3D Perspective Undulating Mesh Canvas & Autonomous Agent Network.
  */
 import { Link, Navigate } from 'react-router-dom'
 import {
-  ArrowRight, Terminal, Shield, Eye, Activity, Utensils, Wrench, Cpu,
-  Check, ChevronRight, CornerDownRight, Binary
+  ArrowRight, Shield, Eye, Activity, Utensils, Wrench, Cpu,
+  Check, ChevronRight, CornerDownRight, Binary, Orbit, ActivitySquare
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import BrandLogo from '../components/common/BrandLogo'
+import MeshBackground from '../components/common/MeshBackground'
 
 const AGENTS = [
   {
@@ -97,9 +97,9 @@ export default function HomePage() {
   }
 
   return (
-    <div className="bg-[#080808] text-[#e0e0e0] min-h-screen flex flex-col font-sans">
+    <div className="bg-[#080808] text-[#e0e0e0] min-h-screen flex flex-col font-sans relative selection:bg-white selection:text-black">
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
-      <header className="border-b border-[#222222] bg-[#0c0c0c] sticky top-0 z-40">
+      <header className="border-b border-[#222222] bg-[#0c0c0c]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <BrandLogo size={28} />
@@ -125,35 +125,38 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* ── Architectural Hero Section ───────────────────────────────────────── */}
-      <section className="relative px-4 sm:px-6 pt-16 sm:pt-24 pb-16 border-b border-[#222222] bg-[#090909]">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      {/* ── Hero Section with 3D Canvas Background ─────────────────────────── */}
+      <section className="relative px-4 sm:px-6 pt-16 sm:pt-24 pb-20 border-b border-[#222222] overflow-hidden min-h-[580px] flex items-center">
+        {/* Interactive 3D Undulating Mesh & Agent Constellation Canvas */}
+        <MeshBackground className="opacity-95" />
+
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10 w-full">
           
           <div className="lg:col-span-8 space-y-6">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-[#141414] border border-[#303030] text-[11px] font-mono text-[#cccccc] uppercase tracking-wider">
-              <span className="w-2 h-2 bg-white inline-block" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#141414]/90 backdrop-blur border border-[#333333] text-[11px] font-mono text-[#cccccc] uppercase tracking-wider">
+              <span className="w-2 h-2 bg-white inline-block animate-pulse" />
               Autonomous Multi-Agent Architecture
             </div>
 
-            <h1 className="text-3xl sm:text-6xl font-bold text-white tracking-tight leading-[1.08] uppercase">
+            <h1 className="text-3xl sm:text-6xl font-bold text-white tracking-tight leading-[1.08] uppercase drop-shadow-sm">
               Precision Facility Control & Perimeter Biometrics
             </h1>
 
-            <p className="text-base sm:text-lg text-[#999999] max-w-2xl leading-relaxed font-light">
+            <p className="text-base sm:text-lg text-[#a8a8a8] max-w-2xl leading-relaxed font-light backdrop-blur-xs">
               An enterprise management platform powered by coordinated AI agents. Replaces disparate campus systems with unified facial recognition, automated curfew governance, dining logistics, and heuristic anomaly detection.
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link
                 to="/login"
-                className="btn-primary text-xs px-6 py-3"
+                className="btn-primary text-xs px-6 py-3 shadow-brutalist hover:shadow-none"
               >
                 Access Command Console <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/signup"
                 id="home-signup-btn"
-                className="btn-secondary text-xs px-6 py-3"
+                className="btn-secondary text-xs px-6 py-3 backdrop-blur-md"
               >
                 Resident Registration
               </Link>
@@ -161,7 +164,7 @@ export default function HomePage() {
           </div>
 
           {/* Technical Telemetry HUD box */}
-          <div className="lg:col-span-4 bg-[#0e0e0e] border border-[#262626] p-5 space-y-4 font-mono text-xs">
+          <div className="lg:col-span-4 bg-[#0e0e0e]/95 backdrop-blur-md border border-[#2b2b2b] p-5 space-y-4 font-mono text-xs shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-[#222222]">
               <span className="text-[#888888] tracking-widest uppercase text-[10px]">Active Infrastructure</span>
               <span className="text-white bg-[#1a1a1a] px-2 py-0.5 border border-[#333333] text-[10px]">STATUS: OK</span>
@@ -200,7 +203,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Operational Modules (Grid) ───────────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 w-full">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 w-full relative z-10">
         <div className="mb-8 flex items-baseline justify-between border-b border-[#222222] pb-3">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-widest text-[#777777]">Direct Routing</span>
@@ -245,7 +248,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Multi-Agent Architecture Matrix ─────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 w-full">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 w-full relative z-10">
         <div className="mb-8 flex items-baseline justify-between border-b border-[#222222] pb-3">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-widest text-[#777777]">Telemetry & Fleet</span>
@@ -293,7 +296,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Monochromatic Architectural Footer ───────────────────────────────── */}
-      <footer className="mt-auto border-t border-[#222222] bg-[#0a0a0a] py-8 text-xs font-mono text-[#666666]">
+      <footer className="mt-auto border-t border-[#222222] bg-[#0a0a0a] py-8 text-xs font-mono text-[#666666] relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <BrandLogo size={20} />
