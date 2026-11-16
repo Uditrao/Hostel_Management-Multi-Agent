@@ -1,46 +1,50 @@
 /**
  * StudentLayout.jsx
- * Layout shell for the Student Portal (/student/*).
- * Renders a horizontal tab navigation bar + content area.
- * Each tab is a placeholder ready for Phase 7B components.
+ * =================
+ * Monochromatic architectural subnav for Student Resident portal.
  */
 import { NavLink, Outlet } from 'react-router-dom'
 import { LayoutDashboard, Camera, CalendarCheck, Wrench } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const tabs = [
-  { to: '/student/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
-  { to: '/student/enroll',      icon: Camera,           label: 'Face Enroll' },
-  { to: '/student/attendance',  icon: CalendarCheck,    label: 'Attendance'  },
-  { to: '/student/complaints',  icon: Wrench,           label: 'Complaints'  },
+  { to: '/student/dashboard',   icon: LayoutDashboard, label: 'OVERVIEW' },
+  { to: '/student/enroll',      icon: Camera,           label: 'BIOMETRICS' },
+  { to: '/student/attendance',  icon: CalendarCheck,    label: 'GATE & CURFEW' },
+  { to: '/student/complaints',  icon: Wrench,           label: 'MAINTENANCE' },
 ]
 
 export default function StudentLayout() {
   return (
-    <div className="flex flex-col min-h-[calc(100vh-56px)]">
-      {/* Tab bar */}
-      <nav className="glass-dark border-b border-white/[0.06] px-4 sm:px-6">
-        <div className="max-w-screen-xl mx-auto flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
+    <div className="flex flex-col min-h-[calc(100vh-56px)] bg-[#080808]">
+      {/* Sub-navigation bar */}
+      <nav className="bg-[#0e0e0e] border-b border-[#222222] px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
           {tabs.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
               to={to}
               id={`student-tab-${label.toLowerCase().replace(/\s/g, '-')}`}
               className={({ isActive }) =>
-                cn('nav-tab whitespace-nowrap', isActive && 'nav-tab-active text-cyan-400')
+                cn(
+                  'nav-tab whitespace-nowrap',
+                  isActive
+                    ? 'nav-tab-active'
+                    : 'text-[#888888] hover:text-white'
+                )
               }
             >
-              <Icon className="w-4 h-4" />
-              {label}
+              <Icon className="w-3.5 h-3.5" />
+              <span>{label}</span>
             </NavLink>
           ))}
         </div>
       </nav>
 
-      {/* Page content */}
-      <div className="flex-1 max-w-screen-xl w-full mx-auto px-4 sm:px-6 py-8">
+      {/* Main Page Content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Outlet />
-      </div>
+      </main>
     </div>
   )
 }

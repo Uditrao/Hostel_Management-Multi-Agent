@@ -1,34 +1,29 @@
 /**
  * Navbar.jsx
  * ===========
- * Global top navigation bar present on all authenticated pages.
- *
- * Features:
- *   - Brand mark with link to role home
- *   - Backend health status badge (live-checks /health every 30s)
- *   - Current user's email + role badge
- *   - Logout button
+ * Architectural Monochromatic Top Control Bar.
+ * High-contrast, sharp grid alignment, custom logo mark.
  */
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Shield, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { checkHealth } from '../../services/api'
 import { cn } from '../../lib/utils'
+import BrandLogo from './BrandLogo'
 
-const ROLE_STYLES = {
-  warden:     { badge: 'badge-violet',  label: 'Warden'     },
-  mess_staff: { badge: 'badge-amber',   label: 'Mess Staff'  },
-  student:    { badge: 'badge-cyan',    label: 'Student'     },
-  kiosk:      { badge: 'badge-emerald', label: 'Kiosk'       },
+const ROLE_LABELS = {
+  warden:     'WARDEN ADMIN',
+  mess_staff: 'DINING OPS',
+  student:    'RESIDENT',
+  kiosk:      'TERMINAL',
 }
 
 export default function Navbar() {
   const { user, role, logout, getRoleHome } = useAuth()
   const navigate = useNavigate()
-  const [backendOnline, setBackendOnline] = useState(null) // null = checking
+  const [backendOnline, setBackendOnline] = useState(null)
 
-  // Check backend health periodically
   useEffect(() => {
     let isMounted = true
     const check = async () => {
@@ -49,65 +44,71 @@ export default function Navbar() {
     navigate('/login', { replace: true })
   }
 
-  const roleInfo = ROLE_STYLES[role] ?? { badge: 'badge-slate', label: role ?? '—' }
-  const email    = user?.email ?? '—'
+  const roleLabel = ROLE_LABELS[role] ?? (role ? role.toUpperCase() : 'USER')
+  const email     = user?.email ?? '—'
 
   return (
-    <header className="sticky top-0 z-50 glass-dark border-b border-white/[0.06]">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 bg-[#0c0c0c] border-b border-[#242424]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
 
-        {/* Brand */}
+        {/* Brand with distinctive logo */}
         <Link
           to={getRoleHome()}
-          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+          className="flex items-center gap-3 group"
         >
-          <div className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center shadow-glow-violet">
-            <Shield className="w-4 h-4 text-white" />
+          <BrandLogo size={26} />
+          <div className="flex items-baseline gap-2">
+            <span className="font-bold text-white text-sm tracking-widest font-mono uppercase">
+              KINESIS<span className="text-[#888888]">/OS</span>
+            </span>
+            <span className="hidden sm:inline-block text-[10px] font-mono text-[#666666] tracking-tight">
+              [FACILITY // v2.4]
+            </span>
           </div>
-          <span className="hidden sm:block font-bold text-slate-200 text-sm tracking-tight">
-            Hostel<span className="text-violet-400">OS</span>
-          </span>
         </Link>
 
-        {/* Right side */}
+        {/* Right Controls */}
         <div className="flex items-center gap-3">
 
-          {/* Backend status */}
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500">
+          {/* Backend Status indicator */}
+          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-[#141414] border border-[#2b2b2b] text-[11px] font-mono">
             {backendOnline === null ? (
-              <span className="status-loading" />
+              <>
+                <span className="w-1.5 h-1.5 bg-[#888888] animate-pulse" />
+                <span className="text-[#888888]">POLLING API</span>
+              </>
             ) : backendOnline ? (
               <>
-                <span className="status-online" />
-                <span className="text-emerald-500">Backend</span>
+                <span className="w-1.5 h-1.5 bg-[#ffffff]" />
+                <span className="text-[#d0d0d0]">SYS ONLINE</span>
               </>
             ) : (
               <>
-                <span className="status-offline" />
-                <span className="text-rose-400">Backend offline</span>
+                <span className="w-1.5 h-1.5 bg-[#777777]" />
+                <span className="text-[#888888]">STANDALONE</span>
               </>
             )}
           </div>
 
-          {/* Role badge */}
-          <span className={cn('hidden sm:inline-flex', roleInfo.badge)}>
-            {roleInfo.label}
+          {/* Role Badge */}
+          <span className="hidden sm:inline-flex text-[10px] font-mono font-semibold px-2 py-0.5 bg-[#181818] border border-[#383838] text-white">
+            {roleLabel}
           </span>
 
-          {/* User email */}
-          <span className="hidden md:block text-xs text-slate-500 max-w-[160px] truncate">
+          {/* User Email */}
+          <div className="hidden md:flex items-center text-[11px] text-[#999999] font-mono bg-[#111111] border border-[#262626] px-2.5 py-1 max-w-[200px] truncate">
             {email}
-          </span>
+          </div>
 
-          {/* Logout */}
+          {/* Logout Button */}
           <button
             onClick={handleLogout}
             id="nav-logout-btn"
-            className="p-2 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10
-                       transition-all duration-200"
-            title="Sign out"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono uppercase text-[#a0a0a0] hover:text-white bg-[#141414] hover:bg-[#202020] border border-[#2c2c2c] hover:border-[#666666] transition-all"
+            title="Sign out of session"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">EXIT</span>
           </button>
         </div>
       </div>

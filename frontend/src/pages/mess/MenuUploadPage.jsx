@@ -191,7 +191,7 @@ export default function MenuUploadPage() {
         {/* Dropzone */}
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-2xl border-2 border-dashed border-white/10 hover:border-amber-500/40 p-8 text-center cursor-pointer transition-all bg-white/[0.01] hover:bg-white/[0.03]"
+          className="rounded-lg border-2 border-dashed border-white/10 hover:border-amber-500/40 p-8 text-center cursor-pointer transition-all bg-white/[0.01] hover:bg-white/[0.03]"
         >
           <input
             type="file"
@@ -215,7 +215,7 @@ export default function MenuUploadPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
+              <div className="w-14 h-14 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
                 <FileText className="w-7 h-7" />
               </div>
               <p className="text-sm font-semibold text-slate-200 mb-1">
@@ -239,7 +239,7 @@ export default function MenuUploadPage() {
             type="button"
             onClick={handleUploadAndParse}
             disabled={!selectedFile || parsing}
-            className="btn-primary py-2.5 px-6 text-xs flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-glow-amber disabled:opacity-50"
+            className="btn-primary py-2.5 px-6 text-xs flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-panel disabled:opacity-50"
           >
             {parsing ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
             {parsing
@@ -258,7 +258,7 @@ export default function MenuUploadPage() {
 
         {/* Error Alert */}
         {parseError && (
-          <div className="p-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-300 flex items-start gap-3 text-xs animate-slide-up">
+          <div className="p-4 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 flex items-start gap-3 text-xs animate-slide-up">
             <AlertTriangle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
             <div>
               <p className="font-semibold text-sm mb-0.5">Menu Parsing Failed</p>
@@ -290,7 +290,7 @@ export default function MenuUploadPage() {
             <button
               onClick={handleSaveMenu}
               disabled={saving}
-              className="btn-primary py-2.5 px-6 text-xs flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-glow-emerald disabled:opacity-50 self-start sm:self-auto"
+              className="btn-primary py-2.5 px-6 text-xs flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-panel disabled:opacity-50 self-start sm:self-auto"
             >
               {saving ? <LoadingSpinner size="sm" /> : <Save className="w-4 h-4" />}
               {saving ? 'Saving to Database…' : 'Confirm & Save Schedule'}
@@ -299,7 +299,7 @@ export default function MenuUploadPage() {
 
           {/* Success Banner */}
           {saveSuccess && (
-            <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 flex items-center gap-3 text-xs">
+            <div className="p-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 flex items-center gap-3 text-xs">
               <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
               <div>
                 <p className="font-semibold text-sm">Menu Successfully Committed!</p>
@@ -314,7 +314,7 @@ export default function MenuUploadPage() {
               mealsList.map((m, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-3"
+                  className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.05] space-y-3"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -339,7 +339,7 @@ export default function MenuUploadPage() {
                     {(m.dishes || []).map((dish, dIdx) => (
                       <div
                         key={dIdx}
-                        className="p-3 rounded-xl bg-slate-950/60 border border-white/[0.06] space-y-2"
+                        className="p-3 rounded-xl bg-[#0b0f17]/60 border border-white/[0.06] space-y-2"
                       >
                         <p className="text-xs font-semibold text-slate-200">
                           {dish.dish_name || dish.name || `Dish ${dIdx + 1}`}
@@ -366,7 +366,7 @@ export default function MenuUploadPage() {
                 </div>
               ))
             ) : (
-              <pre className="p-4 rounded-xl bg-slate-950/80 border border-white/[0.06] text-xs font-mono text-slate-300 overflow-x-auto">
+              <pre className="p-4 rounded-xl bg-[#0b0f17]/80 border border-white/[0.06] text-xs font-mono text-slate-300 overflow-x-auto">
                 {JSON.stringify(parseResult, null, 2)}
               </pre>
             )}
@@ -383,14 +383,14 @@ export default function MenuUploadPage() {
           </h3>
 
           {/* Meal tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#141b2a] border border-white/[0.06]">
             {['breakfast', 'lunch', 'dinner'].map((meal) => (
               <button
                 key={meal}
                 onClick={() => setActiveMenuMeal(meal)}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition-all ${
                   activeMenuMeal === meal
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-glow-amber'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-panel'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >

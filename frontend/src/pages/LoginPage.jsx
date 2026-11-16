@@ -1,24 +1,24 @@
 /**
  * LoginPage.jsx
  * =============
- * Unified login for all roles — uses Supabase email/password auth.
- * Includes quick-fill demo buttons for easy development testing.
+ * Architectural Monochromatic Authentication Interface.
+ * Built with pure black, dark charcoal, slate grey, off-white, and sharp borders.
  */
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, LogIn, Cpu } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, LogIn, ArrowRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import LoadingSpinner from '../components/common/LoadingSpinner'
+import BrandLogo from '../components/common/BrandLogo'
 
-// Demo credentials for quick testing — REMOVE in production
 const DEMO_ACCOUNTS = [
-  { role: 'warden',     email: 'warden@hostel.com',     password: 'warden123',  label: 'Warden',      color: 'badge-violet' },
-  { role: 'mess_staff', email: 'mess@hostel.com',        password: 'mess1234',   label: 'Mess Staff',  color: 'badge-amber'  },
-  { role: 'student',    email: 'student@hostel.com',     password: 'student123', label: 'Student',     color: 'badge-cyan'   },
+  { role: 'warden',     email: 'warden@hostel.com',     password: 'warden123',  label: 'WARDEN ADMIN' },
+  { role: 'mess_staff', email: 'mess@hostel.com',        password: 'mess1234',   label: 'DINING STAFF' },
+  { role: 'student',    email: 'student@hostel.com',     password: 'student123', label: 'RESIDENT' },
 ]
 
 export default function LoginPage() {
-  const { login, logout, role, isAuthenticated, user, loading: authLoading, getRoleHome } = useAuth()
+  const { login, logout, role, isAuthenticated, user, getRoleHome } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect') || null
@@ -36,7 +36,7 @@ export default function LoginPage() {
     const { error: loginError } = await login(email.trim(), password)
     setLoading(false)
     if (loginError) {
-      setError(loginError.message ?? 'Login failed. Check your credentials.')
+      setError(loginError.message ?? 'Authentication rejected. Verify credentials.')
       return
     }
     navigate(redirectTo || getRoleHome(), { replace: true })
@@ -49,40 +49,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-hostel min-h-screen flex flex-col items-center justify-center px-4">
-      {/* Card */}
-      <div className="w-full max-w-md animate-slide-up">
+    <div className="bg-[#080808] min-h-screen flex flex-col justify-center items-center px-4 py-12 font-sans text-[#e0e0e0]">
+      <div className="w-full max-w-md">
 
-        {/* Logo mark */}
-        <div className="flex flex-col items-center mb-8 gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-violet-600 flex items-center justify-center shadow-glow-violet">
-            <Cpu className="w-7 h-7 text-white" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
-              Hostel<span className="text-violet-400">OS</span>
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Sign in to your portal</p>
-          </div>
+        {/* Brand Header */}
+        <div className="flex flex-col items-center mb-8 text-center">
+          <BrandLogo size={42} className="mb-4" />
+          <h1 className="text-xl font-bold text-white tracking-widest font-mono uppercase">
+            KINESIS<span className="text-[#888888]">/GATEWAY</span>
+          </h1>
+          <p className="text-xs text-[#777777] font-mono mt-1">SECURE ACCESS TO FACILITY SYSTEM</p>
         </div>
 
-        <div className="card">
-          {/* Active session bar if already logged in */}
+        {/* Main Card */}
+        <div className="bg-[#0d0d0d] border border-[#262626] p-6 sm:p-8">
+
+          {/* Active Session Notice */}
           {isAuthenticated && user && (
-            <div className="mb-5 p-3.5 rounded-xl bg-violet-500/10 border border-violet-500/25 flex items-center justify-between gap-3 text-xs">
+            <div className="mb-6 p-3 bg-[#141414] border border-[#333333] flex items-center justify-between gap-3 text-xs font-mono">
               <div className="min-w-0">
-                <p className="text-slate-300 truncate">
-                  Signed in as <strong className="text-violet-300">{user.email}</strong>
+                <p className="text-white truncate">
+                  ACTIVE: <strong>{user.email}</strong>
                 </p>
-                <p className="text-[11px] text-slate-500 capitalize">Role: {role || 'User'}</p>
+                <p className="text-[10px] text-[#777777] uppercase">CLEARANCE: {role || 'RESIDENT'}</p>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => navigate(redirectTo || getRoleHome())}
-                  className="px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-medium text-[11px]"
+                  className="px-2.5 py-1 bg-white text-black font-semibold text-[10px] uppercase tracking-wider"
                 >
-                  Dashboard
+                  CONSOLE
                 </button>
                 <button
                   type="button"
@@ -91,24 +88,27 @@ export default function LoginPage() {
                     setEmail('')
                     setPassword('')
                   }}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-[11px]"
+                  className="px-2.5 py-1 bg-[#222222] hover:bg-[#333333] text-white text-[10px] uppercase"
                 >
-                  Sign Out
+                  DISCONNECT
                 </button>
               </div>
             </div>
           )}
-          {/* Demo quick-fill */}
-          <div className="mb-5">
-            <p className="section-label">Quick demo login</p>
-            <div className="flex gap-2 flex-wrap">
+
+          {/* Quick Demo Credentials */}
+          <div className="mb-6 pb-5 border-b border-[#202020]">
+            <p className="text-[10px] uppercase tracking-widest text-[#777777] font-semibold mb-2.5 font-mono">
+              PRESET CLEARANCES (DEV TEST)
+            </p>
+            <div className="grid grid-cols-3 gap-2">
               {DEMO_ACCOUNTS.map((demo) => (
                 <button
                   key={demo.role}
                   type="button"
                   id={`demo-login-${demo.role}`}
                   onClick={() => fillDemo(demo)}
-                  className={`badge ${demo.color} cursor-pointer hover:opacity-80 transition-opacity py-1.5 px-3 text-xs`}
+                  className="px-2 py-2 bg-[#141414] hover:bg-[#202020] border border-[#2b2b2b] hover:border-[#666666] text-[10px] font-mono font-medium text-[#cccccc] transition-colors text-center"
                 >
                   {demo.label}
                 </button>
@@ -116,17 +116,14 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="divider" />
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Email */}
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4 font-mono">
             <div>
-              <label htmlFor="login-email" className="block text-xs font-medium text-slate-400 mb-1.5">
-                Email address
+              <label htmlFor="login-email" className="block text-[11px] uppercase tracking-wider text-[#aaaaaa] mb-1.5">
+                INSTITUTIONAL EMAIL
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
                 <input
                   id="login-email"
                   type="email"
@@ -134,19 +131,18 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@hostel.com"
-                  className="input-field pl-10"
+                  placeholder="identity@hostel.edu"
+                  className="input-field pl-9"
                 />
               </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label htmlFor="login-password" className="block text-xs font-medium text-slate-400 mb-1.5">
-                Password
+              <label htmlFor="login-password" className="block text-[11px] uppercase tracking-wider text-[#aaaaaa] mb-1.5">
+                ACCESS CIPHER
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555555]" />
                 <input
                   id="login-password"
                   type={showPass ? 'text' : 'password'}
@@ -155,12 +151,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="input-field pl-10 pr-10"
+                  className="input-field pl-9 pr-9"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555555] hover:text-white transition-colors"
                   tabIndex={-1}
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -168,32 +164,39 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error message */}
             {error && (
-              <div className="glass border border-rose-500/30 rounded-xl px-4 py-3 text-sm text-rose-400 animate-fade-in">
+              <div className="p-3 bg-[#1f1414] border border-[#522929] text-[11px] text-[#e49191]">
                 {error}
               </div>
             )}
 
-            {/* Submit */}
             <button
               id="login-submit-btn"
               type="submit"
               disabled={loading}
-              className="btn-primary flex items-center justify-center gap-2 mt-1"
+              className="btn-primary w-full mt-3"
             >
               {loading ? <LoadingSpinner size="sm" /> : <LogIn className="w-4 h-4" />}
-              {loading ? 'Signing in…' : 'Sign In'}
+              <span>{loading ? 'AUTHENTICATING…' : 'ENTER FACILITY SYSTEM'}</span>
             </button>
           </form>
 
-          {/* Signup link */}
-          <p className="text-center text-sm text-slate-500 mt-5">
-            New student?{' '}
-            <Link to="/signup" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
-              Create account
-            </Link>
-          </p>
+          {/* Registration link */}
+          <div className="mt-6 pt-4 border-t border-[#202020] text-center font-mono">
+            <p className="text-xs text-[#777777]">
+              Unregistered Resident?{' '}
+              <Link to="/signup" className="text-white hover:underline font-medium">
+                Submit Enrollment Request
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Back Link */}
+        <div className="mt-6 text-center font-mono">
+          <Link to="/" className="text-xs text-[#666666] hover:text-[#999999] transition-colors">
+            ← RETURN TO SYSTEM ARCHITECTURE
+          </Link>
         </div>
       </div>
     </div>

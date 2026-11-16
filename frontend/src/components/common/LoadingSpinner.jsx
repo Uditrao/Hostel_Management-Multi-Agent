@@ -1,21 +1,21 @@
 /**
  * LoadingSpinner.jsx
- * Multi-size premium animated spinner used throughout the app.
+ * Multi-size refined animated spinner for enterprise dashboard interfaces.
  */
 import { cn } from '../../lib/utils'
 
 export default function LoadingSpinner({ size = 'md', className = '' }) {
   const sizes = {
-    sm: 'w-5 h-5 border-2',
-    md: 'w-8 h-8 border-2',
-    lg: 'w-12 h-12 border-[3px]',
-    xl: 'w-20 h-20 border-4',
+    sm: 'w-4 h-4 border-2',
+    md: 'w-7 h-7 border-2',
+    lg: 'w-10 h-10 border-[2.5px]',
+    xl: 'w-14 h-14 border-3',
   }
 
   return (
     <div
       className={cn(
-        'rounded-full border-slate-700 border-t-violet-500 animate-spin',
+        'rounded-full border-slate-700 border-t-blue-500 animate-spin',
         sizes[size] ?? sizes.md,
         className
       )}
@@ -26,18 +26,16 @@ export default function LoadingSpinner({ size = 'md', className = '' }) {
 }
 
 /**
- * Full-page loading state with centered spinner and optional message.
+ * Full-page loading state with centered spinner and clear status message.
  */
-export function FullPageSpinner({ message = 'Loading…' }) {
+export function FullPageSpinner({ message = 'Loading system telemetry…' }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-hostel">
-      {/* Outer glow ring */}
-      <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-violet-500/20 blur-xl animate-pulse" />
-        <LoadingSpinner size="xl" />
+    <div className="flex flex-col items-center justify-center min-h-screen gap-3 bg-[#0b0f17]">
+      <div className="p-3 rounded-lg bg-[#141b2a] border border-white/[0.08] shadow-panel">
+        <LoadingSpinner size="lg" />
       </div>
       {message && (
-        <p className="text-sm text-slate-500 animate-pulse">{message}</p>
+        <p className="text-xs font-mono text-slate-400">{message}</p>
       )}
     </div>
   )

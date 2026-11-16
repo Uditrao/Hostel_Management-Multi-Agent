@@ -2,21 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Global Reset & Base ─────────────────────────────────────────────────────── */
+/* ── Global Brutalist / Monochromatic Reset ─────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #090d16;
-  color: #e2e8f0;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #080808;
+  color: #e2e2e2;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
@@ -28,156 +29,384 @@ body {
   flex-direction: column;
 }
 
-/* ── Custom Scrollbar ─────────────────────────────────────────────────────────── */
+/* ── Precision Technical Scrollbar ─────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: #0d0d0d;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.5);
-  border-radius: 3px;
+  background: #333333;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.8);
+  background: #555555;
 }
 
-/* ── Glassmorphism Utilities ─────────────────────────────────────────────────── */
+/* ── Architectural Monochromatic Components ─────────────────────────────────── */
 @layer components {
-  .glass {
-    background: rgba(30, 41, 59, 0.70);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Surfaces & Containers */
+  .surface-panel {
+    background-color: #0f0f0f;
+    border: 1px solid #222222;
   }
 
-  .glass-dark {
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+  .surface-card {
+    background-color: #121212;
+    border: 1px solid #262626;
   }
 
-  .glass-light {
-    background: rgba(51, 65, 85, 0.50);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+  .surface-muted {
+    background-color: #161616;
+    border: 1px solid #222222;
   }
 
-  /* ── Input fields ─────────────────────────────────────────── */
-  .input-field {
-    @apply w-full px-4 py-3 rounded-xl glass text-slate-200 placeholder-slate-500
-           border border-white/[0.08] focus:outline-none focus:border-violet-500/60
-           focus:ring-2 focus:ring-violet-500/20 transition-all duration-200;
-  }
-
-  /* ── Buttons ──────────────────────────────────────────────── */
-  .btn-primary {
-    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200
-           bg-violet-600 hover:bg-violet-500 shadow-none hover:shadow-glow-violet
-           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-secondary {
-    @apply px-6 py-3 rounded-xl font-semibold text-slate-300 transition-all duration-200
-           glass hover:bg-white/10 border border-white/10 hover:border-white/20
-           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-danger {
-    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200
-           bg-rose-600 hover:bg-rose-500 hover:shadow-glow-rose
-           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-emerald {
-    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200
-           bg-emerald-600 hover:bg-emerald-500 hover:shadow-glow-emerald
-           active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  /* ── Cards ────────────────────────────────────────────────── */
+  /* Universal Cards */
   .card {
-    @apply glass rounded-2xl p-6 shadow-glass animate-fade-in;
+    background-color: #111111;
+    border: 1px solid #262626;
+    border-radius: 2px;
+    padding: 1.25rem;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
   }
 
   .card-hover {
-    @apply card transition-all duration-300 hover:bg-slate-700/60 hover:border-white/15 cursor-pointer;
+    @apply card transition-all duration-150 hover:border-[#666666] hover:bg-[#161616] cursor-pointer;
   }
 
-  /* ── Stat card ────────────────────────────────────────────── */
+  /* Stat & KPI Cards */
   .stat-card {
-    @apply glass rounded-2xl p-5 flex flex-col gap-2 shadow-glass;
+    background-color: #101010;
+    border: 1px solid #242424;
+    border-radius: 2px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .stat-card:hover {
+    border-color: #555555;
+    background-color: #141414;
   }
 
-  /* ── Badge / Pill ─────────────────────────────────────────── */
+  /* Form Inputs & Fields */
+  .input-field {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border-radius: 2px;
+    background-color: #0c0c0c;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid #2b2b2b;
+    transition: all 0.15s ease;
+  }
+  .input-field::placeholder {
+    color: #555555;
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: #ffffff;
+    box-shadow: 0 0 0 1px #ffffff;
+    background-color: #111111;
+  }
+  .input-field:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* High-Contrast Monochromatic Buttons */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.15rem;
+    border-radius: 2px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #000000;
+    background-color: #ffffff;
+    border: 1px solid #ffffff;
+    transition: all 0.15s ease;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: #e5e5e5;
+    border-color: #e5e5e5;
+    box-shadow: 2px 2px 0px 0px rgba(255, 255, 255, 0.4);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.15rem;
+    border-radius: 2px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #e0e0e0;
+    background-color: #171717;
+    border: 1px solid #333333;
+    transition: all 0.15s ease;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #222222;
+    border-color: #666666;
+    color: #ffffff;
+  }
+  .btn-secondary:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 2px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #8c8c8c;
+    background-color: transparent;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background-color: #1c1c1c;
+    color: #ffffff;
+    border-color: #333333;
+  }
+
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    border-radius: 2px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #ffffff;
+    background-color: #1f1414;
+    border: 1px solid #5a2626;
+    transition: all 0.15s ease;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background-color: #301919;
+    border-color: #883333;
+    color: #ffffff;
+  }
+
+  .btn-emerald {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    border-radius: 2px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #ffffff;
+    background-color: #131c16;
+    border: 1px solid #285435;
+    transition: all 0.15s ease;
+  }
+  .btn-emerald:hover:not(:disabled) {
+    background-color: #1c2b21;
+    border-color: #3d794f;
+    color: #ffffff;
+  }
+
+  /* Monochrome Badges & Status Chips */
   .badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+    font-size: 0.6875rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .badge-slate {
+    background-color: #181818;
+    color: #a0a0a0;
+    border: 1px solid #303030;
+  }
+  .badge-cyan, .badge-info, .badge-primary {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    border: 1px solid #4a4a4a;
   }
   .badge-violet {
-    @apply badge bg-violet-500/20 text-violet-300 border border-violet-500/30;
+    background-color: #1c1c1c;
+    color: #ffffff;
+    border: 1px solid #555555;
   }
-  .badge-cyan {
-    @apply badge bg-cyan-500/20 text-cyan-300 border border-cyan-500/30;
+  .badge-emerald, .badge-success {
+    background-color: #111a14;
+    color: #93c9a3;
+    border: 1px solid #2a4733;
   }
-  .badge-emerald {
-    @apply badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30;
+  .badge-amber, .badge-warning {
+    background-color: #1a1710;
+    color: #e2ba76;
+    border: 1px solid #4f4125;
   }
-  .badge-rose {
-    @apply badge bg-rose-500/20 text-rose-300 border border-rose-500/30;
-  }
-  .badge-amber {
-    @apply badge bg-amber-500/20 text-amber-300 border border-amber-500/30;
-  }
-  .badge-slate {
-    @apply badge bg-slate-500/20 text-slate-400 border border-slate-500/30;
+  .badge-rose, .badge-danger {
+    background-color: #1c1111;
+    color: #e49191;
+    border: 1px solid #522929;
   }
 
-  /* ── Nav Tab ──────────────────────────────────────────────── */
+  /* Glass compatibility overrides */
+  .glass {
+    background-color: #111111;
+    border: 1px solid #262626;
+  }
+  .glass-dark {
+    background-color: #0c0c0c;
+    border: 1px solid #222222;
+  }
+  .glass-light {
+    background-color: #181818;
+    border: 1px solid #333333;
+  }
+
+  /* Structural Navigation Tabs */
   .nav-tab {
-    @apply flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400
-           transition-all duration-200 hover:text-slate-200 hover:bg-white/5;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 0px;
+    font-size: 0.8125rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    color: #8c8c8c;
+    letter-spacing: 0.02em;
+    transition: all 0.15s ease;
+    border-bottom: 2px solid transparent;
+  }
+  .nav-tab:hover {
+    color: #ffffff;
+    background-color: #141414;
   }
   .nav-tab-active {
-    @apply nav-tab text-slate-200 bg-white/[0.08] border border-white/10;
+    color: #ffffff;
+    background-color: #161616;
+    border-bottom-color: #ffffff;
   }
 
-  /* ── Section label ────────────────────────────────────────── */
-  .section-label {
-    @apply text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3;
+  /* Minimal Technical Tables */
+  .enterprise-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .enterprise-table th {
+    background-color: #0d0d0d;
+    color: #777777;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #262626;
+    border-top: 1px solid #262626;
+    text-align: left;
+  }
+  .enterprise-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #1c1c1c;
+    color: #cccccc;
+  }
+  .enterprise-table tr:hover td {
+    background-color: #141414;
+    color: #ffffff;
   }
 
-  /* ── Divider ──────────────────────────────────────────────── */
-  .divider {
-    @apply w-full h-px bg-white/[0.06] my-4;
-  }
-
-  /* ── Page header ──────────────────────────────────────────── */
+  /* Typography & Technical Layout Helpers */
   .page-header {
-    @apply text-2xl font-bold text-slate-100 tracking-tight;
+    font-size: 1.625rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
   }
-
   .page-subheader {
-    @apply text-sm text-slate-500 mt-1;
+    font-size: 0.8125rem;
+    color: #8c8c8c;
+    margin-top: 0.25rem;
+    letter-spacing: 0.01em;
+  }
+  .section-label {
+    font-size: 0.6875rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #666666;
+    margin-bottom: 0.6rem;
+  }
+  .divider {
+    width: 100%;
+    height: 1px;
+    background-color: #222222;
+    margin: 1rem 0;
   }
 
-  /* ── Status dot ───────────────────────────────────────────── */
+  /* Minimalist Monochromatic Status Dot */
   .status-dot {
-    @apply w-2 h-2 rounded-full;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 0px;
   }
-  .status-online  { @apply status-dot bg-emerald-400 animate-pulse-slow; }
-  .status-offline { @apply status-dot bg-rose-400; }
-  .status-loading { @apply status-dot bg-amber-400 animate-pulse; }
+  .status-online {
+    background-color: #ffffff;
+  }
+  .status-offline {
+    background-color: #666666;
+  }
+  .status-loading {
+    background-color: #999999;
+  }
 }
 
-/* ── Background gradient ─────────────────────────────────────────────────────── */
+/* Background grid with technical crosshair lines */
 .bg-hostel {
-  background: radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 10%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
-              radial-gradient(ellipse at 60% 90%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-              #090d16;
+  background-color: #080808;
+  background-image: 
+    linear-gradient(#181818 1px, transparent 1px),
+    linear-gradient(90deg, #181818 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -1px -1px;
   min-height: 100vh;
 }

@@ -421,7 +421,7 @@ export default function MessKioskPage() {
   })
 
   return (
-    <div className={`space-y-6 animate-fade-in ${isFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-6 overflow-y-auto' : ''}`}>
+    <div className={`space-y-6 animate-fade-in ${isFullscreen ? 'fixed inset-0 z-50 bg-[#0b0f17] p-6 overflow-y-auto' : ''}`}>
       {/* ── Header & Head Count Summary Bar ────────────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
         <div>
@@ -445,7 +445,7 @@ export default function MessKioskPage() {
 
         {/* Live Head Count Counters */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
-          <div className={`p-2.5 rounded-xl border transition-all ${currentMealType === 'breakfast' ? 'bg-amber-500/15 border-amber-500/40 shadow-glow-amber' : 'bg-slate-900/60 border-white/[0.06]'}`}>
+          <div className={`p-2.5 rounded-xl border transition-all ${currentMealType === 'breakfast' ? 'bg-amber-500/15 border-amber-500/40 shadow-panel' : 'bg-[#141b2a] border-white/[0.06]'}`}>
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
               <Sun className="w-3.5 h-3.5 text-amber-400" />
               Breakfast
@@ -453,7 +453,7 @@ export default function MessKioskPage() {
             <p className="text-lg font-bold text-slate-100 font-mono mt-0.5">{headCounts.breakfast}</p>
           </div>
 
-          <div className={`p-2.5 rounded-xl border transition-all ${currentMealType === 'lunch' ? 'bg-amber-500/15 border-amber-500/40 shadow-glow-amber' : 'bg-slate-900/60 border-white/[0.06]'}`}>
+          <div className={`p-2.5 rounded-xl border transition-all ${currentMealType === 'lunch' ? 'bg-amber-500/15 border-amber-500/40 shadow-panel' : 'bg-[#141b2a] border-white/[0.06]'}`}>
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
               <Flame className="w-3.5 h-3.5 text-orange-400" />
               Lunch
@@ -461,7 +461,7 @@ export default function MessKioskPage() {
             <p className="text-lg font-bold text-slate-100 font-mono mt-0.5">{headCounts.lunch}</p>
           </div>
 
-          <div className={`p-2.5 rounded-xl border transition-all ${currentMealType === 'dinner' ? 'bg-amber-500/15 border-amber-500/40 shadow-glow-amber' : 'bg-slate-900/60 border-white/[0.06]'}`}>
+          <div className={`p-2.5 rounded-xl border transition-all ${currentMealType === 'dinner' ? 'bg-amber-500/15 border-amber-500/40 shadow-panel' : 'bg-[#141b2a] border-white/[0.06]'}`}>
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
               <Moon className="w-3.5 h-3.5 text-indigo-400" />
               Dinner
@@ -480,11 +480,11 @@ export default function MessKioskPage() {
       </div>
 
       {/* ── Active Session Selector & View Controls ───────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-900/40 border border-white/[0.06]">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-[#141b2a] border border-white/[0.06]">
         {/* Meal Session Selector */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-400 font-medium">Active Session:</span>
-          <div className="flex rounded-lg bg-slate-950/80 p-1 border border-white/[0.06] text-xs">
+          <div className="flex rounded-lg bg-[#0b0f17]/80 p-1 border border-white/[0.06] text-xs">
             <button
               onClick={() => setSelectedMeal('auto')}
               className={`px-3 py-1 rounded-md transition-all font-medium ${selectedMeal === 'auto' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
@@ -554,7 +554,7 @@ export default function MessKioskPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Webcam Viewport & Controls (7 Cols) */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="card p-4 relative overflow-hidden bg-slate-950/80 border border-white/[0.08] shadow-2xl rounded-2xl">
+            <div className="card p-4 relative overflow-hidden bg-[#0b0f17]/80 border border-white/[0.08] shadow-2xl rounded-lg">
               {/* Flash feedback animation */}
               {flashActive && (
                 <div className="absolute inset-0 bg-white/40 z-30 pointer-events-none transition-opacity duration-200 animate-pulse"></div>
@@ -588,7 +588,7 @@ export default function MessKioskPage() {
                 {cameraActive && (
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     {/* Corner Reticle Brackets */}
-                    <div className="w-64 h-64 relative border border-amber-500/20 rounded-3xl">
+                    <div className="w-64 h-64 relative border border-amber-500/20 rounded-lg">
                       <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-amber-400 rounded-tl-xl"></div>
                       <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-amber-400 rounded-tr-xl"></div>
                       <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-amber-400 rounded-bl-xl"></div>
@@ -603,7 +603,7 @@ export default function MessKioskPage() {
                 )}
 
                 {/* Top Badge: Target Session */}
-                <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-2 text-xs font-mono text-slate-200">
+                <div className="absolute top-3 left-3 bg-[#0b0f17]/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-2 text-xs font-mono text-slate-200">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
                   SESSION: <span className="uppercase text-amber-400 font-bold">{currentMealType}</span>
                 </div>
@@ -631,7 +631,7 @@ export default function MessKioskPage() {
                   <button
                     onClick={performScan}
                     disabled={!cameraActive || scanning}
-                    className="btn-primary py-2.5 px-6 text-sm flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-glow-amber disabled:opacity-50"
+                    className="btn-primary py-2.5 px-6 text-sm flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-panel disabled:opacity-50"
                   >
                     {scanning ? <LoadingSpinner size="sm" /> : <Eye className="w-4 h-4" />}
                     {scanning ? 'Verifying Face…' : 'Scan Face (Space)'}
@@ -656,18 +656,18 @@ export default function MessKioskPage() {
             {/* ── Real-Time Scan Result Hero Card ────────────────────────── */}
             {lastScanResult && (
               <div
-                className={`p-5 rounded-2xl border transition-all animate-slide-up ${
+                className={`p-5 rounded-lg border transition-all animate-slide-up ${
                   lastScanResult.allowed
-                    ? 'bg-emerald-500/10 border-emerald-500/40 shadow-glow-emerald'
+                    ? 'bg-emerald-500/10 border-emerald-500/40 shadow-panel'
                     : lastScanResult.already_entered
-                    ? 'bg-amber-500/10 border-amber-500/40 shadow-glow-amber'
+                    ? 'bg-amber-500/10 border-amber-500/40 shadow-panel'
                     : 'bg-rose-500/10 border-rose-500/40'
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3.5">
                     <div
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border ${
                         lastScanResult.allowed
                           ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
                           : lastScanResult.already_entered
@@ -748,7 +748,7 @@ export default function MessKioskPage() {
 
           {/* ── Today's Check-in Feed Table (5 Cols) ───────────────────── */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="card p-4 space-y-3 bg-slate-950/80 border border-white/[0.08] rounded-2xl h-[560px] flex flex-col">
+            <div className="card p-4 space-y-3 bg-[#0b0f17]/80 border border-white/[0.08] rounded-lg h-[560px] flex flex-col">
               <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
                 <div>
                   <h3 className="text-sm font-bold text-slate-200 flex items-center gap-1.5">
@@ -784,7 +784,7 @@ export default function MessKioskPage() {
                   recentEntries.map((item) => (
                     <div
                       key={item.id}
-                      className="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.04] flex items-center justify-between gap-3 text-xs hover:border-white/10 transition-all"
+                      className="p-2.5 rounded-xl bg-[#141b2a] border border-white/[0.04] flex items-center justify-between gap-3 text-xs hover:border-white/10 transition-all"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div
@@ -828,7 +828,7 @@ export default function MessKioskPage() {
         </div>
       ) : (
         /* ── Manual Fallback Search & Check-in ───────────────────────── */
-        <div className="card p-6 space-y-5 bg-slate-950/80 border border-white/[0.08] rounded-2xl animate-fade-in">
+        <div className="card p-6 space-y-5 bg-[#0b0f17]/80 border border-white/[0.08] rounded-lg animate-fade-in">
           <div>
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <Search className="w-4 h-4 text-amber-400" />
