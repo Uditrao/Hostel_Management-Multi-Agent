@@ -12,26 +12,22 @@ email-validator>=2.0.0
 slowapi==0.1.9          # rate limiting for face recognition endpoint
 
 # Phase 1 (IRIS — Vision Agent)
-# switched from insightface→deepface (insightface needs Visual C++ on Windows)
-onnxruntime         # ONNX runtime (also used by deepface internally)
+# Ultra-lightweight 512-d ONNX FaceNet engine (Render 512MB RAM safe, ~40MB RAM usage)
+onnxruntime>=1.18.0
 opencv-python-headless==4.10.0.84
 numpy==1.26.4
 Pillow==10.4.0
-deepface            # face recognition — no C++ compile needed, works on Windows
-tf-keras            # deepface backend
-werkzeug>=3.0.0     # required by deepface internally
 
 # Phase 2 (SENTINEL — Attendance Agent)
 apscheduler==3.10.4
 
 # Phase 3B (NOURISH — Gemini menu parser)
-# Uses httpx for Gemini REST API calls (avoids protobuf conflicts with TensorFlow)
+# Uses httpx for Gemini REST API calls (avoids protobuf conflicts)
 httpx
 
 # Phase 3C + 4 + 5 (NOURISH NLP + FIXR + HERALD — Groq)
 # NOTE: FIXR uses groq_client.py which calls Groq via httpx (already listed above).
 # No additional groq SDK package required.
-# groq==0.9.0  # Uncomment only if you prefer the official SDK over httpx calls
 
 # Phase 6 (Auth — JWT verification)
 python-jose[cryptography]==3.3.0
