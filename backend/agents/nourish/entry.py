@@ -42,8 +42,13 @@ def _now_ist() -> datetime:
 def _parse_time(env_key: str, default: str) -> time:
     """Read an HH:MM time string from env, fall back to default."""
     raw = os.getenv(env_key, default).strip()
-    parts = raw.split(":")
-    return time(int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
+    try:
+        parts = raw.split(":")
+        return time(int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
+    except (ValueError, IndexError):
+        logger.warning("Invalid %s='%s', falling back to default '%s'", env_key, raw, default)
+        parts = default.split(":")
+        return time(int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
 
 
 MEAL_WINDOWS: Dict[str, Dict[str, time]] = {
