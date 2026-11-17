@@ -10,11 +10,12 @@ import {
   Users, AlertTriangle, Wrench, ShieldCheck,
   Activity, Eye, UtensilsCrossed, Cpu,
   RefreshCw, ArrowRight, UserCheck, Clock,
-  CheckCircle2, XCircle, Zap, DoorOpen
+  CheckCircle2, XCircle, Zap, DoorOpen, Settings
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { wardenApi, sentinelApi } from '../../services/api'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import AttendanceWindowModal from '../../components/warden/AttendanceWindowModal'
 
 const AGENTS = [
   { name: 'IRIS',     role: 'Vision Agent',          desc: 'MobileFaceNet 512-d biometric recognition & kiosk event dispatch', status: 'ONLINE' },
@@ -41,6 +42,7 @@ export default function WardenDashboard() {
   const [heraldSummary, setHeraldSummary] = useState(null)
   const [recentAnomalies, setRecentAnomalies] = useState([])
   const [recentComplaints, setRecentComplaints] = useState([])
+  const [windowModalOpen, setWindowModalOpen] = useState(false)
 
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -276,9 +278,28 @@ export default function WardenDashboard() {
                     {stats.gateWindow.active_days?.join(', ') || 'MON-SUN'}
                   </span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setWindowModalOpen(true)}
+                  className="w-full mt-2 py-2 px-3 bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>CONFIGURE CURFEW TIMINGS</span>
+                </button>
               </div>
             ) : (
-              <p className="text-xs text-[#666666] italic py-4">Window configuration offline.</p>
+              <div className="py-2">
+                <p className="text-xs text-[#666666] italic mb-2">Window configuration offline.</p>
+                <button
+                  type="button"
+                  onClick={() => setWindowModalOpen(true)}
+                  className="w-full py-2 px-3 bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>SET CURFEW TIMINGS</span>
+                </button>
+              </div>
             )}
           </div>
 
@@ -447,6 +468,15 @@ export default function WardenDashboard() {
           ))}
         </div>
       </div>
+
+      <AttendanceWindowModal
+        isOpen={windowModalOpen}
+        onClose={() => setWindowModalOpen(false)}
+        initialWindow={stats.gateWindow}
+        onSaved={(newWin) => {
+          setStats((prev) => ({ ...prev, gateWindow: newWin }))
+        }}
+      />
     </div>
   )
 }

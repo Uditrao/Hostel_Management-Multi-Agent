@@ -63,7 +63,7 @@ def _get_cron_trigger_for_window() -> CronTrigger:
     """Read window end_time and return a CronTrigger in IST timezone."""
     try:
         window = get_attendance_window()
-        end_time_obj = _parse_time(window.get("end_time", "09:00:00"))
+        end_time_obj = _parse_time(window.get("end_time", "22:30:00"))
         # Run at window end_time every day
         return CronTrigger(
             hour=end_time_obj.hour,
@@ -71,8 +71,8 @@ def _get_cron_trigger_for_window() -> CronTrigger:
             timezone=IST_TZ,
         )
     except Exception as exc:
-        logger.warning("SENTINEL: Could not read window for cron trigger, using default (09:00 IST): %s", exc)
-        return CronTrigger(hour=9, minute=0, timezone=IST_TZ)
+        logger.warning("SENTINEL: Could not read window for cron trigger, using default (22:30 IST): %s", exc)
+        return CronTrigger(hour=22, minute=30, timezone=IST_TZ)
 
 
 def start_sentinel_scheduler() -> AsyncIOScheduler:

@@ -25,11 +25,11 @@ logger = logging.getLogger("hostel.sentinel.attendance")
 # Timezone matching Postgres schema index (Asia/Kolkata / IST: UTC+05:30)
 IST_TZ = timezone(timedelta(hours=5, minutes=30))
 
-# Default attendance window fallback
+# Default attendance window fallback (Night curfew 19:00 to 22:30 IST, every day)
 DEFAULT_WINDOW = {
-    "start_time": "07:00:00",
-    "end_time": "09:00:00",
-    "active_days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "start_time": "19:00:00",
+    "end_time": "22:30:00",
+    "active_days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
 }
 
 
@@ -48,6 +48,33 @@ def _parse_time(t: Any) -> time:
     minute = int(parts[1]) if len(parts) > 1 else 0
     second = int(parts[2].split(".")[0]) if len(parts) > 2 else 0
     return time(hour, minute, second)
+
+
+def _evaluate_attendance_status(
+    current_time: time,
+    window_start: time,
+    window_end: time,
+    is_active_day: bool,
+) -> str:
+    """
+    Evaluates check-in status:
+    - 'present': Checked in on or before window_end (on time or early).
+    - 'late': Checked in after window_end on an active curfew day.
+    """
+    if not is_active_day:
+        return "present"
+
+    if window_start <= window_end:
+        # Standard daytime/evening window, e.g. 19:00 to 22:30
+        if current_time > window_end:
+            return "late"
+        return "present"
+    else:
+        # Overnight window crossing midnight, e.g. 21:00 to 01:00
+        # Late if after cutoff (01:00) and before window start (21:00)
+        if window_end < current_time < window_start:
+            return "late"
+        return "present"
 
 
 # ── Attendance Window CRUD ───────────────────────────────────────────────────
@@ -155,6 +182,22 @@ def record_gate_attendance(event: Dict[str, Any]) -> Dict[str, Any]:
     end_of_day_iso = datetime.combine(now_ist.date(), time.max, tzinfo=IST_TZ).isoformat()
 
     try:
+        # 1. Fetch active window to determine status ('present' vs 'late') for this scan
+        window = get_attendance_window()
+        window_start = _parse_time(window.get("start_time", "19:00:00"))
+        window_end = _parse_time(window.get("end_time", "22:30:00"))
+        raw_active_days = window.get("active_days") or ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        active_day_names = [str(d).strip().capitalize()[:3] for d in raw_active_days if d]
+        is_active_day = (day_name.capitalize()[:3] in active_day_names) if active_day_names else True
+
+        status = _evaluate_attendance_status(current_time, window_start, window_end, is_active_day)
+
+        logger.info(
+            "SENTINEL: Gate scan for student=%s at %s IST (day=%s) | Window=%s–%s (active_day=%s) -> evaluated_status=%s",
+            student_id, current_time.strftime("%H:%M:%S"), day_name, window_start.strftime("%H:%M"), window_end.strftime("%H:%M"), is_active_day, status
+        )
+
+        # 2. Check if student already marked today in IST
         existing = (
             client.table("attendance_logs")
             .select("*")
@@ -167,37 +210,45 @@ def record_gate_attendance(event: Dict[str, Any]) -> Dict[str, Any]:
 
         if existing.data and len(existing.data) > 0:
             existing_log = existing.data[0]
-            logger.info(
-                "SENTINEL: Attendance already marked today for student=%s (status=%s)",
-                student_id,
-                existing_log.get("status"),
-            )
+            existing_status = existing_log.get("status")
+
+            # If student was marked 'late' earlier (e.g. daytime gate pass), but now scans on-time during curfew window:
+            # Upgrade their record to 'present'!
+            if existing_status != "present" and status == "present":
+                logger.info("SENTINEL: Upgrading attendance from '%s' to 'present' for student=%s", existing_status, student_id)
+                upd_res = (
+                    client.table("attendance_logs")
+                    .update({"status": "present", "timestamp": now_ist.isoformat()})
+                    .eq("id", existing_log["id"])
+                    .execute()
+                )
+                updated_log = upd_res.data[0] if upd_res.data else {**existing_log, "status": "present"}
+                return {
+                    "success": True,
+                    "already_marked": False,
+                    "status": "present",
+                    "student_id": student_id,
+                    "student_name": event.get("student_name"),
+                    "roll_no": event.get("roll_no"),
+                    "room_no": event.get("room_no"),
+                    "log": updated_log,
+                    "message": "Attendance successfully verified and marked as PRESENT for today.",
+                }
+
+            # If already marked present, or both scans were late, preserve existing log
             return {
                 "success": True,
                 "already_marked": True,
-                "status": existing_log.get("status"),
+                "status": existing_status,
                 "student_id": student_id,
                 "student_name": event.get("student_name"),
                 "roll_no": event.get("roll_no"),
+                "room_no": event.get("room_no"),
                 "log": existing_log,
-                "message": f"Attendance was already marked as '{existing_log.get('status')}' for today ({today_date_str}).",
+                "message": f"Attendance was already marked as '{existing_status}' for today ({today_date_str}).",
             }
 
-        # 2. Check attendance window to determine status ('present' vs 'late')
-        window = get_attendance_window()
-        window_start = _parse_time(window.get("start_time", "07:00:00"))
-        window_end = _parse_time(window.get("end_time", "09:00:00"))
-        active_days = window.get("active_days", ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
-
-        # Determine attendance status:
-        # If today is an active day and entry is between window_start and window_end: 'present'
-        # Otherwise: 'late'
-        if day_name in active_days and (window_start <= current_time <= window_end):
-            status = "present"
-        else:
-            status = "late"
-
-        # 3. Insert new attendance log
+        # 3. Insert new attendance log (first scan of the day)
         insert_payload = {
             "student_id": student_id,
             "timestamp": now_ist.isoformat(),

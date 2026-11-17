@@ -84,6 +84,7 @@ export const irisApi = {
 export const sentinelApi = {
   getStatus: () => api.get('/sentinel/status'),
   getWindow: () => api.get('/sentinel/window'),
+  updateWindow: (payload) => api.put('/sentinel/window', payload),
   getAttendance: (studentId, limit = 50) =>
     api.get('/sentinel/attendance', {
       params: { student_id: studentId, limit },
