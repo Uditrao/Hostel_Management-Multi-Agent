@@ -15,7 +15,8 @@
 5. [Module 4: Master Synthetic Dataset Specification & LLM Generation Prompt](#5-module-4-master-synthetic-dataset-specification--llm-generation-prompt)
 6. [Module 5: Machine Learning Turnout Model & Google Colab Blueprint](#6-module-5-machine-learning-turnout-model--google-colab-blueprint)
 7. [Module 6: NOURISH Real-Time Production Integration (NOURISH-Oracle)](#7-module-6-nourish-real-time-production-integration-nourish-oracle)
-8. [Phased Implementation Roadmap & Verification Checklist](#8-phased-implementation-roadmap--verification-checklist)
+8. [Module 7: Student Dining Feedback & Sentiment Sub-Agent (NOURISH-Gusto)](#8-module-7-student-dining-feedback--sentiment-sub-agent-nourish-gusto)
+9. [Phased Implementation Roadmap & Verification Checklist](#9-phased-implementation-roadmap--verification-checklist)
 
 ---
 
@@ -196,6 +197,18 @@ This guarantees that data across agents remains 100% synchronized and prevents f
 - **Formula**:
   $$\text{Effective Campus Diners} = \text{Total Enrolled Students} - \text{Students with Active Approved Outpass Today}$$
 - If 35 students have approved leaves for Sunday, NOURISH automatically sets base dining potential to $150 - 35 = 115$.
+
+### Rule D: HERALD Outpass Fraud & Ghosting Anomaly Detection (Hostel Breakout Defense)
+- **The Vulnerability**:
+  - A resident may apply for an official outpass (claiming to be at home or out of town), get it approved, but remain physically inside the hostel or return clandestinely to evade SENTINEL's nightly 22:00 IST curfew roll-calls.
+- **Cross-Agent Correlation Logic**:
+  - If a student is flagged with an active `approved` outpass window (`NOW() BETWEEN departure_datetime AND expected_return_datetime`), but **IRIS** detects their biometric face scan at either:
+    1. **NOURISH Mess Kiosk** (`mess_entries` row logged with `is_recognized = true`), OR
+    2. **Hostel Gate Kiosk** (`attendance_logs` row logged outside scheduled departure/return bounds).
+- **Automated Disciplinary Action**:
+  - **HERALD** instantly triggers a high-severity anomaly flag: `outpass_fraud_detected` (or `unauthorized_presence`).
+  - Flag details: *"Student [Name] ([Roll]) is officially on approved outpass (Departure: [Date] to [Date]), but was biometrically recognized dining at Mess Kiosk on [Timestamp]. Potential curfew evasion or unauthorized stay detected."*
+  - Automatically notifies the Warden on the **HERALD Security Feed** and revokes curfew immunity for that calendar date.
 
 ---
 
@@ -420,6 +433,45 @@ When the mess manager opens the **"Issue Meal Stock"** modal on `MessDashboard.j
 
 ---
 
+## 7. Module 7: Student Dining Feedback & Sentiment Sub-Agent (NOURISH-Gusto)
+
+### Motivation & Strategic Architecture
+Currently, `dish_popularity_score` (1.0 to 10.0) is statically assigned based on historical intuition (e.g. Biryani = 9.5, Khichdi = 3.5). However, student tastes fluctuate, recipes change, and food quality varies by batch.
+
+Rather than overloading NOURISH's real-time operational kiosk and storeroom responsibilities, we architect a specialized sub-agent: **NOURISH-Gusto (Dining Experience & Culinary Analytics Sub-Agent)**.
+
+### Sub-Agent Responsibilities:
+1. **Student Post-Meal Rating Widget**:
+   - Following each recognized mess scan (or within a 2-hour window on the Student Dashboard), students can rate their meal (1 to 5 stars) and select qualitative tags (*"Tasty"*, *"Too Oily"*, *"Cold Food"*, *"Insufficient Quantity"*).
+2. **Dynamic Dish Popularity Index (DPI)**:
+   - Computes rolling weighted average ratings over the last 30 days for every menu dish:
+     $$\text{DPI}_{\text{dish}} = \left( \frac{\sum_{i=1}^{N} \text{Rating}_i \times w_i}{\sum w_i} \right) \times 2.0$$
+   - This scales the 1-5 star user rating directly to the 1.0 - 10.0 scale required by the `NOURISH-Oracle` ML Turnout model!
+3. **Sentiment & Trend Analysis**:
+   - If a recurring dish drops below a 3.0 DPI rating, NOURISH-Gusto triggers an alert on the Mess Staff Dashboard with student sentiment summaries to adjust recipes before turnout collapses.
+
+```
+┌────────────────────────────────────────────────────────┐
+│               STUDENT POST-MEAL FEEDBACK               │
+│         Ratings (1-5★) + Tags + Text Comments          │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│         NOURISH-Gusto (Culinary Sub-Agent)             │
+│  • Rolling Dish Popularity Index (DPI: 1.0 - 10.0)     │
+│  • LLM Quality Sentiment Summaries (via Groq)          │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│           NOURISH-Oracle (ML Turnout Model)            │
+│  DPI feeds as live feature vector for Turnout Forecast │
+└────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 8. Phased Implementation Roadmap & Verification Checklist
 
 | Phase | Milestone / Component | Key Deliverables | Verification Test |
@@ -429,11 +481,12 @@ When the mess manager opens the **"Issue Meal Stock"** modal on `MessDashboard.j
 | **Phase 10A** | Student Outpass Application | Form on Student Portal with parent contact and pass types | Student submits outpass $\rightarrow$ visible in Warden inbox |
 | **Phase 10B** | Warden Outpass Approvals Hub | Warden review UI with "Call Parent" link and 1-click Approve | Warden approves pass $\rightarrow$ status becomes `approved` |
 | **Phase 10C** | SENTINEL Curfew Immunity | Scheduler skips students on approved leave at 22:00 IST | Outpass student marked `on_leave`, NOT `defaulter` |
-| **Phase 10D** | HERALD Anomaly Filter | Suppress missed-meal alerts for students on leave | No welfare tickets raised for off-campus students |
+| **Phase 10D** | HERALD Anomaly & Fraud Filter | Suppress false welfare alerts AND detect outpass evasion/fraud | Outpass students at mess trigger `outpass_fraud_detected` |
 | **Phase 11A** | Synthetic Dataset Ingestion | Generate 270-row CSV via Master Prompt; save to `backend/data/` | CSV verified with correct column formats |
 | **Phase 11B** | Model Training in Colab | Train Random Forest in Google Colab; export `.pkl` weights | Model evaluated with $R^2 > 0.85$, MAE $< 6$ diners |
 | **Phase 11C** | NOURISH Inference API | Mount `GET /nourish/predict/turnout` in FastAPI router | API returns predicted turnout + adaptive target |
 | **Phase 11D** | Dashboard Pre-fill Integration | Auto-feed predicted target into Kitchen Stock Issue Panel | Issue Panel defaults to AI predicted target |
+| **Phase 12** | NOURISH-Gusto (Feedback) | Student post-meal ratings & dynamic DPI feed into ML model | DPI updates dynamically based on student stars |
 
 ---
 *End of Blueprint. Follow these phases sequentially during development.*
