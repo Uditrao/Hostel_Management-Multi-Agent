@@ -300,7 +300,7 @@ export default function FaceEnrollmentPage() {
 
         {/* Current Enrollment Status Pill */}
         <div
-          className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border ${
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border ${
             isEnrolled
               ? 'bg-emerald-500/10 border-emerald-500/30'
               : 'bg-amber-500/10 border-amber-500/30'
@@ -362,12 +362,12 @@ export default function FaceEnrollmentPage() {
         {/* Left column: Camera / Upload viewport (8 cols) */}
         <div className="lg:col-span-7 space-y-4">
           {/* Mode Switcher */}
-          <div className="flex rounded-xl bg-slate-900/60 p-1 border border-white/[0.06]">
+          <div className="flex rounded-xl bg-[#141b2a] p-1 border border-white/[0.06]">
             <button
               onClick={() => setActiveTab('webcam')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === 'webcam'
-                  ? 'bg-cyan-500 text-slate-950 shadow-glow-cyan'
+                  ? 'bg-cyan-500 text-slate-950 shadow-panel'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -378,7 +378,7 @@ export default function FaceEnrollmentPage() {
               onClick={() => setActiveTab('upload')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === 'upload'
-                  ? 'bg-cyan-500 text-slate-950 shadow-glow-cyan'
+                  ? 'bg-cyan-500 text-slate-950 shadow-panel'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -388,7 +388,7 @@ export default function FaceEnrollmentPage() {
           </div>
 
           {/* Viewport Box */}
-          <div className="relative rounded-3xl overflow-hidden glass border border-white/10 aspect-[4/3] bg-slate-950 flex items-center justify-center shadow-2xl">
+          <div className="relative rounded-lg overflow-hidden glass border border-white/10 aspect-[4/3] bg-[#0b0f17] flex items-center justify-center shadow-2xl">
             {activeTab === 'webcam' ? (
               <>
                 {/* Countdown display */}
@@ -427,7 +427,7 @@ export default function FaceEnrollmentPage() {
 
                     {/* Camera error message */}
                     {cameraError && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-slate-950/90">
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-[#0b0f17]/90">
                         <AlertCircle className="w-10 h-10 text-rose-400 mb-2" />
                         <p className="text-sm text-slate-300 font-medium max-w-sm mb-4">
                           {cameraError}
@@ -445,7 +445,7 @@ export default function FaceEnrollmentPage() {
                     {streamActive && !cameraError && (
                       <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
                         {/* Corner Reticles */}
-                        <div className="relative w-64 h-72 rounded-3xl border border-cyan-400/40">
+                        <div className="relative w-64 h-72 rounded-lg border border-cyan-400/40">
                           {/* Laser Sweep Animation */}
                           <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse-slow shadow-[0_0_12px_#22d3ee]" />
 
@@ -498,7 +498,7 @@ export default function FaceEnrollmentPage() {
                     <img
                       src={uploadedPreview}
                       alt="Upload preview"
-                      className="max-h-full max-w-full rounded-2xl object-contain shadow-lg"
+                      className="max-h-full max-w-full rounded-lg object-contain shadow-lg"
                     />
                     <div className="absolute bottom-3 right-3 badge badge-slate">
                       Click to replace
@@ -506,7 +506,7 @@ export default function FaceEnrollmentPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-4">
                       <Upload className="w-7 h-7" />
                     </div>
                     <p className="text-sm font-semibold text-slate-200 mb-1">
@@ -540,7 +540,7 @@ export default function FaceEnrollmentPage() {
                   <button
                     onClick={handleEnrollSubmit}
                     disabled={submitting}
-                    className="btn-primary flex-1 py-3 text-sm flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-glow-cyan"
+                    className="btn-primary flex-1 py-3 text-sm flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-panel"
                   >
                     {submitting ? (
                       <LoadingSpinner size="sm" />
@@ -554,7 +554,7 @@ export default function FaceEnrollmentPage() {
                 <button
                   onClick={triggerCapture}
                   disabled={!streamActive || countdown !== null}
-                  className="btn-primary w-full py-3.5 text-sm flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-glow-cyan disabled:opacity-50"
+                  className="btn-primary w-full py-3.5 text-sm flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-panel disabled:opacity-50"
                 >
                   <Camera className="w-4 h-4" />
                   Capture Snapshot (3s Countdown)
@@ -564,7 +564,7 @@ export default function FaceEnrollmentPage() {
               <button
                 onClick={handleEnrollSubmit}
                 disabled={!uploadedFile || submitting}
-                className="btn-primary w-full py-3.5 text-sm flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-glow-cyan disabled:opacity-50"
+                className="btn-primary w-full py-3.5 text-sm flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-panel disabled:opacity-50"
               >
                 {submitting ? (
                   <LoadingSpinner size="sm" />
@@ -579,7 +579,7 @@ export default function FaceEnrollmentPage() {
           {/* Result Alert Box */}
           {enrollResult && (
             <div
-              className={`p-4 rounded-2xl border animate-slide-up flex items-start gap-3 ${
+              className={`p-4 rounded-lg border animate-slide-up flex items-start gap-3 ${
                 enrollResult.success
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
                   : 'bg-rose-500/10 border-rose-500/30 text-rose-300'

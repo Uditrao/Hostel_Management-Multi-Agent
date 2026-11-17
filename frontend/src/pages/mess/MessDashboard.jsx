@@ -334,7 +334,7 @@ export default function MessDashboard() {
 
             <Link
               to="/mess/kiosk"
-              className="btn-primary text-xs px-4 py-2 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-glow-emerald"
+              className="btn-primary text-xs px-4 py-2 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-panel"
             >
               <Camera className="w-4 h-4" />
               Mess Kiosk
@@ -342,7 +342,7 @@ export default function MessDashboard() {
 
             <Link
               to="/mess/command"
-              className="btn-primary text-xs px-4 py-2 flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-glow-amber"
+              className="btn-primary text-xs px-4 py-2 flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-panel"
             >
               <Terminal className="w-4 h-4" />
               NLP Command Bar
@@ -361,7 +361,7 @@ export default function MessDashboard() {
       >
         <div className="flex items-center gap-3.5">
           <div
-            className={`w-12 h-12 rounded-2xl border flex items-center justify-center ${
+            className={`w-12 h-12 rounded-lg border flex items-center justify-center ${
               activeMeal
                 ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
                 : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
@@ -407,7 +407,7 @@ export default function MessDashboard() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleOpenDepletionModal(null, 'issue')}
-              className="btn-primary text-xs px-3.5 py-1.5 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold shadow-md hover:shadow-glow-amber transition-all"
+              className="btn-primary text-xs px-3.5 py-1.5 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold shadow-md hover:shadow-panel transition-all"
             >
               <Utensils className="w-3.5 h-3.5" />
               Issue Meal Stock
@@ -635,7 +635,7 @@ export default function MessDashboard() {
             </div>
 
             {/* Tabs: Tomorrow's Advance Market List vs Today's Deficits */}
-            <div className="flex rounded-lg bg-slate-950 p-1 border border-white/[0.06] text-xs">
+            <div className="flex rounded-lg bg-[#0b0f17] p-1 border border-white/[0.06] text-xs">
               <button
                 onClick={() => setForecastTab('tomorrow')}
                 className={`px-3 py-1 rounded-md font-medium flex items-center gap-1.5 transition-all ${
@@ -647,7 +647,7 @@ export default function MessDashboard() {
                 <ShoppingCart className="w-3.5 h-3.5" />
                 Tomorrow's Market List
                 {(forecastData?.tomorrow_shortages?.length || 0) > 0 && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${forecastTab === 'tomorrow' ? 'bg-slate-950 text-amber-400' : 'bg-amber-500/20 text-amber-300'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${forecastTab === 'tomorrow' ? 'bg-[#0b0f17] text-amber-400' : 'bg-amber-500/20 text-amber-300'}`}>
                     {forecastData.tomorrow_shortages.length}
                   </span>
                 )}
@@ -664,7 +664,7 @@ export default function MessDashboard() {
                 <AlertTriangle className="w-3.5 h-3.5" />
                 Today's Deficits
                 {(forecastData?.today_shortages?.length || 0) > 0 && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${forecastTab === 'today' ? 'bg-slate-950 text-rose-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${forecastTab === 'today' ? 'bg-[#0b0f17] text-rose-300' : 'bg-rose-500/20 text-rose-300'}`}>
                     {forecastData.today_shortages.length}
                   </span>
                 )}
@@ -692,7 +692,7 @@ export default function MessDashboard() {
                 {forecastData.tomorrow_shortages.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-3 rounded-xl bg-slate-900/60 border border-amber-500/20 flex items-center justify-between gap-3 text-xs"
+                    className="p-3 rounded-xl bg-[#141b2a] border border-amber-500/20 flex items-center justify-between gap-3 text-xs"
                   >
                     <div>
                       <div className="flex items-center gap-2">
@@ -740,7 +740,7 @@ export default function MessDashboard() {
                 {forecastData.today_shortages.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-3 rounded-xl bg-slate-900/60 border border-rose-500/30 flex items-center justify-between gap-3 text-xs"
+                    className="p-3 rounded-xl bg-[#141b2a] border border-rose-500/30 flex items-center justify-between gap-3 text-xs"
                   >
                     <div>
                       <div className="flex items-center gap-2">
@@ -775,8 +775,8 @@ export default function MessDashboard() {
 
       {/* Hybrid Kitchen Stock Issue & Wastage Command Modal */}
       {depletionModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className="card w-full max-w-2xl border border-amber-500/30 bg-slate-900/95 shadow-2xl p-6 relative overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0b0f17]/80 backdrop-blur-md animate-fade-in">
+          <div className="card w-full max-w-2xl border border-amber-500/30 bg-[#141b2a] shadow-2xl p-6 relative overflow-hidden max-h-[90vh] flex flex-col">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500" />
 
             {/* Modal Header & Navigation Tabs */}
@@ -799,7 +799,7 @@ export default function MessDashboard() {
 
               <div className="flex items-center gap-2">
                 {/* Tab Switcher Pills */}
-                <div className="flex items-center bg-slate-950/60 p-1 rounded-xl border border-white/[0.06] text-xs">
+                <div className="flex items-center bg-[#0b0f17]/60 p-1 rounded-xl border border-white/[0.06] text-xs">
                   <button
                     type="button"
                     onClick={() => setActiveModalTab('issue')}
@@ -851,7 +851,7 @@ export default function MessDashboard() {
                       }}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize border transition-all ${
                         isSelected
-                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-glow-amber'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-panel'
                           : 'bg-white/[0.02] border-white/[0.08] text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -919,7 +919,7 @@ export default function MessDashboard() {
                         {depletionResult.depletions?.map((d, idx) => (
                           <div
                             key={idx}
-                            className="px-3 py-2 rounded-lg bg-slate-950/60 border border-white/[0.06] flex items-center justify-between text-xs"
+                            className="px-3 py-2 rounded-lg bg-[#0b0f17]/60 border border-white/[0.06] flex items-center justify-between text-xs"
                           >
                             <span className="font-semibold text-slate-200 capitalize">{d.ingredient}</span>
                             <span className="font-mono font-bold text-amber-400">
@@ -977,7 +977,7 @@ export default function MessDashboard() {
                         No recipe ingredients found for {depletionMeal}. Upload a menu first or adjust headcount.
                       </div>
                     ) : (
-                      <div className="border border-white/[0.08] rounded-xl overflow-hidden bg-slate-950/40">
+                      <div className="border border-white/[0.08] rounded-xl overflow-hidden bg-[#0b0f17]/40">
                         <table className="w-full text-left text-xs">
                           <thead className="bg-white/[0.04] text-slate-400 font-semibold border-b border-white/[0.06]">
                             <tr>
@@ -1197,7 +1197,7 @@ export default function MessDashboard() {
                       {wastageStats.records.map((r, idx) => (
                         <div
                           key={idx}
-                          className="px-3 py-2 rounded-lg bg-slate-950/60 border border-white/[0.06] flex items-center justify-between text-xs"
+                          className="px-3 py-2 rounded-lg bg-[#0b0f17]/60 border border-white/[0.06] flex items-center justify-between text-xs"
                         >
                           <div>
                             <span className="font-semibold text-slate-200 capitalize">{r.meal_type}</span>

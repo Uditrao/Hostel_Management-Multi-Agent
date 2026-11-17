@@ -146,7 +146,7 @@ export default function AttendancePage() {
         >
           <div className="flex items-center gap-3">
             <div
-              className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${
+              className={`w-11 h-11 rounded-lg border flex items-center justify-center ${
                 curfewStatus.isCurfewActive
                   ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
                   : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400'
@@ -246,7 +246,7 @@ export default function AttendancePage() {
       <div className="card border border-white/[0.08] p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
           {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/60 border border-white/[0.06] w-fit">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#141b2a] border border-white/[0.06] w-fit">
             {[
               { id: 'all', label: 'All Scans' },
               { id: 'present', label: 'Present' },
@@ -257,7 +257,7 @@ export default function AttendancePage() {
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   statusFilter === tab.id
-                    ? 'bg-cyan-500 text-slate-950 shadow-glow-cyan'
+                    ? 'bg-cyan-500 text-slate-950 shadow-panel'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -287,7 +287,7 @@ export default function AttendancePage() {
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-3">
+            <div className="w-14 h-14 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-3">
               <Calendar className="w-7 h-7" />
             </div>
             <h3 className="text-sm font-semibold text-slate-200">No Attendance Records</h3>

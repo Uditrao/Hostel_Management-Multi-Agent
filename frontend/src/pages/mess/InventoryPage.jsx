@@ -240,7 +240,7 @@ export default function InventoryPage() {
 
           <button
             onClick={() => openAdjustment('', 'add', 'kg')}
-            className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-glow-amber"
+            className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-panel"
           >
             <Plus className="w-4 h-4" />
             Adjust / Add Stock
@@ -250,7 +250,7 @@ export default function InventoryPage() {
 
       {/* Active Low Stock Alerts Banner */}
       {alerts.length > 0 && (
-        <div className="p-5 rounded-2xl border border-rose-500/30 bg-rose-500/10 space-y-3 animate-slide-up">
+        <div className="p-5 rounded-lg border border-rose-500/30 bg-rose-500/10 space-y-3 animate-slide-up">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center">
@@ -272,7 +272,7 @@ export default function InventoryPage() {
             {alerts.map((alt) => (
               <div
                 key={alt.id}
-                className="p-3 rounded-xl bg-slate-950/60 border border-rose-500/20 flex items-center justify-between gap-3"
+                className="p-3 rounded-xl bg-[#0b0f17]/60 border border-rose-500/20 flex items-center justify-between gap-3"
               >
                 <div>
                   <p className="text-xs font-semibold text-slate-200 capitalize">
@@ -333,7 +333,7 @@ export default function InventoryPage() {
       <div className="card border border-white/[0.08] p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
           {/* Status Filter Pills */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/60 border border-white/[0.06] w-fit">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#141b2a] border border-white/[0.06] w-fit">
             {[
               { id: 'all', label: 'All Items' },
               { id: 'low', label: 'Low Stock' },
@@ -344,7 +344,7 @@ export default function InventoryPage() {
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   statusFilter === tab.id
-                    ? 'bg-amber-500 text-slate-950 shadow-glow-amber'
+                    ? 'bg-amber-500 text-slate-950 shadow-panel'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -373,7 +373,7 @@ export default function InventoryPage() {
           </div>
         ) : filteredInventory.length === 0 ? (
           <div className="py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-3">
+            <div className="w-14 h-14 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-3">
               <Package className="w-7 h-7" />
             </div>
             <h3 className="text-sm font-semibold text-slate-200">No Ingredients Found</h3>
@@ -511,7 +511,7 @@ export default function InventoryPage() {
 
             <form onSubmit={handleStockUpdate} className="space-y-4">
               {/* Action Mode Toggle */}
-              <div className="flex rounded-xl bg-slate-900/60 p-1 border border-white/[0.06]">
+              <div className="flex rounded-xl bg-[#141b2a] p-1 border border-white/[0.06]">
                 {[
                   { id: 'add', label: '+ Add Delivery', color: 'bg-emerald-500 text-slate-950' },
                   { id: 'subtract', label: '- Deduct Usage', color: 'bg-rose-500 text-white' },
@@ -646,7 +646,7 @@ export default function InventoryPage() {
                 <button
                   type="submit"
                   disabled={updating}
-                  className="btn-primary text-xs py-2 px-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-glow-amber"
+                  className="btn-primary text-xs py-2 px-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-panel"
                 >
                   {updating ? <LoadingSpinner size="sm" /> : 'Save Update'}
                 </button>
@@ -683,7 +683,7 @@ export default function InventoryPage() {
               <label className="block text-xs font-medium text-slate-400">
                 Select Meal Service to Deplete
               </label>
-              <div className="flex rounded-xl bg-slate-900/60 p-1 border border-white/[0.06]">
+              <div className="flex rounded-xl bg-[#141b2a] p-1 border border-white/[0.06]">
                 {['breakfast', 'lunch', 'dinner'].map((m) => (
                   <button
                     key={m}
@@ -691,7 +691,7 @@ export default function InventoryPage() {
                     onClick={() => setDepletionMeal(m)}
                     className={`flex-1 py-2 text-xs font-semibold rounded-lg capitalize transition-all ${
                       depletionMeal === m
-                        ? 'bg-amber-500 text-slate-950 font-bold shadow-glow-amber'
+                        ? 'bg-amber-500 text-slate-950 font-bold shadow-panel'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
@@ -725,7 +725,7 @@ export default function InventoryPage() {
                 type="button"
                 onClick={handleTriggerDepletion}
                 disabled={depleting}
-                className="btn-primary text-xs py-2 px-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-glow-amber"
+                className="btn-primary text-xs py-2 px-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-panel"
               >
                 {depleting ? <LoadingSpinner size="sm" /> : 'Run Depletion Now'}
               </button>

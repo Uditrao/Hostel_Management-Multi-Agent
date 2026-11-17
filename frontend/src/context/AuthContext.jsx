@@ -2,16 +2,7 @@
  * AuthContext.jsx
  * ================
  * Global auth state provider powered by Supabase.
- *
- * Provides:
- *   - user         : Supabase user object (null if unauthenticated)
- *   - role         : 'student' | 'warden' | 'mess_staff' | 'kiosk' | null
- *   - isAuthenticated
- *   - loading      : true while initial session is being resolved
- *   - login(email, password)  → { error }
- *   - logout()
- *   - signup(fields)          → { error }
- *   - getRoleHome()           → redirect path for current role
+ * Includes defensive timeout and offline resilience to prevent infinite loading.
  */
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../services/supabase'
@@ -20,10 +11,6 @@ const AuthContext = createContext(null)
 
 // ── Role utilities ─────────────────────────────────────────────────────────────
 
-/**
- * Extract our application role from a Supabase user object.
- * Role is stored in user_metadata.role by convention.
- */
 function extractRole(user) {
   if (!user) return null
   return (
@@ -33,7 +20,6 @@ function extractRole(user) {
   )
 }
 
-/** Map a role to its default portal path */
 function getRoleHomePath(role) {
   switch (role) {
     case 'warden':     return '/warden/dashboard'
@@ -71,7 +57,6 @@ export function AuthProvider({ children }) {
         return data
       }
       if (res.status === 401) {
-        // Token belongs to a deleted/expired user in Supabase — purge stale session
         await supabase.auth.signOut().catch(() => {})
         setUser(null)
         setRole(null)
@@ -84,7 +69,6 @@ export function AuthProvider({ children }) {
     return null
   }, [])
 
-  // Sync state from Supabase session
   function syncFromSession(session) {
     const u = session?.user ?? null
     setUser(u)
@@ -97,13 +81,34 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    // 1. Load existing session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      syncFromSession(session)
-      setLoading(false)
-    })
+    let resolved = false
 
-    // 2. Subscribe to future auth state changes
+    // Safety timeout: Never leave user on blank loading screen if Supabase stalls
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true
+        setLoading(false)
+      }
+    }, 1500)
+
+    // 1. Load existing session on mount
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        if (!resolved) {
+          syncFromSession(data?.session)
+          resolved = true
+          setLoading(false)
+        }
+      })
+      .catch((err) => {
+        console.warn('Session resolution caught error:', err)
+        if (!resolved) {
+          resolved = true
+          setLoading(false)
+        }
+      })
+
+    // 2. Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         syncFromSession(session)
@@ -111,21 +116,35 @@ export function AuthProvider({ children }) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeout)
+      subscription?.unsubscribe()
+    }
   }, [fetchProfile])
 
   // ── Login ──────────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      return { error }
+    } catch (err) {
+      return { error: { message: err?.message || 'Login failed.' } }
+    }
   }, [])
 
   // ── Logout ─────────────────────────────────────────────────────────────────
   const logout = useCallback(async () => {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // ignore
+    }
+    setUser(null)
+    setRole(null)
+    setProfile(null)
   }, [])
 
-  // ── Signup (student self-registration) ─────────────────────────────────────
+  // ── Signup ─────────────────────────────────────────────────────────────────
   const signup = useCallback(async ({ email, password, full_name, roll_no, room_no }) => {
     try {
       const res = await fetch(
@@ -159,7 +178,6 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   const getRoleHome = useCallback(() => getRoleHomePath(role), [role])
 
   const value = {
@@ -180,7 +198,6 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-// ── Hook ───────────────────────────────────────────────────────────────────────
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within <AuthProvider>')

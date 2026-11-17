@@ -196,7 +196,7 @@ export default function ApprovalsPage() {
             onClick={() => setActiveTab('pending')}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'pending'
-                ? 'bg-violet-600 text-white shadow-glow-violet'
+                ? 'bg-violet-600 text-white shadow-panel'
                 : 'text-slate-400 hover:text-slate-200 bg-white/[0.03]'
             }`}
           >
@@ -213,7 +213,7 @@ export default function ApprovalsPage() {
             onClick={() => setActiveTab('approved')}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'approved'
-                ? 'bg-violet-600 text-white shadow-glow-violet'
+                ? 'bg-violet-600 text-white shadow-panel'
                 : 'text-slate-400 hover:text-slate-200 bg-white/[0.03]'
             }`}
           >
@@ -361,7 +361,7 @@ export default function ApprovalsPage() {
                       <button
                         onClick={() => handleApprove(student)}
                         disabled={busy}
-                        className="btn-primary flex items-center gap-2 text-sm shadow-glow-violet"
+                        className="btn-primary flex items-center gap-2 text-sm shadow-panel"
                       >
                         {busy ? (
                           <>

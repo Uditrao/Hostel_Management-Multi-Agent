@@ -205,7 +205,7 @@ export default function ComplaintsPage() {
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
               placeholder="e.g. Room 304 fan regulator is sparking and making a burning smell, please send someone immediately..."
-              className="w-full px-4 py-3 rounded-2xl glass text-slate-200 placeholder-slate-500 border border-white/10 focus:outline-none focus:border-rose-500/50 focus:ring-2 focus:ring-rose-500/20 transition-all text-sm resize-none"
+              className="w-full px-4 py-3 rounded-lg glass text-slate-200 placeholder-slate-500 border border-white/10 focus:outline-none focus:border-rose-500/50 focus:ring-2 focus:ring-rose-500/20 transition-all text-sm resize-none"
             />
           </div>
 
@@ -218,7 +218,7 @@ export default function ComplaintsPage() {
             <button
               type="submit"
               disabled={submitting || rawText.trim().length < 10}
-              className="btn-primary py-2.5 px-6 text-xs flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 font-semibold shadow-glow-rose disabled:opacity-50"
+              className="btn-primary py-2.5 px-6 text-xs flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 font-semibold shadow-panel disabled:opacity-50"
             >
               {submitting ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" />}
               {submitting ? 'Analyzing & Filing…' : 'Submit Ticket'}
@@ -229,7 +229,7 @@ export default function ComplaintsPage() {
         {/* Submission Result Banner */}
         {submitResult && (
           <div
-            className={`p-4 rounded-2xl border animate-slide-up flex items-start gap-3 ${
+            className={`p-4 rounded-lg border animate-slide-up flex items-start gap-3 ${
               submitResult.success
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
                 : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
@@ -283,7 +283,7 @@ export default function ComplaintsPage() {
           </h2>
 
           {/* Status Filter tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/60 border border-white/[0.06] w-fit">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#141b2a] border border-white/[0.06] w-fit">
             {[
               { id: 'all', label: 'All' },
               { id: 'open', label: 'Open' },
@@ -295,7 +295,7 @@ export default function ComplaintsPage() {
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   statusFilter === tab.id
-                    ? 'bg-rose-600 text-white shadow-glow-rose'
+                    ? 'bg-rose-600 text-white shadow-panel'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -312,7 +312,7 @@ export default function ComplaintsPage() {
           </div>
         ) : filteredComplaints.length === 0 ? (
           <div className="card py-16 text-center border border-white/[0.06]">
-            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-3">
+            <div className="w-14 h-14 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-3">
               <Wrench className="w-7 h-7" />
             </div>
             <h3 className="text-sm font-semibold text-slate-200">No Tickets Found</h3>

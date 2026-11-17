@@ -390,7 +390,7 @@ export default function GateKioskPage() {
           onClick={() => setActiveTab('kiosk')}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
             activeTab === 'kiosk'
-              ? 'bg-violet-600 text-white shadow-glow-violet'
+              ? 'bg-violet-600 text-white shadow-panel'
               : 'text-slate-400 hover:text-slate-200 bg-white/[0.03]'
           }`}
         >
@@ -402,7 +402,7 @@ export default function GateKioskPage() {
           onClick={() => setActiveTab('manual')}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
             activeTab === 'manual'
-              ? 'bg-violet-600 text-white shadow-glow-violet'
+              ? 'bg-violet-600 text-white shadow-panel'
               : 'text-slate-400 hover:text-slate-200 bg-white/[0.03]'
           }`}
         >
@@ -418,7 +418,7 @@ export default function GateKioskPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Live Camera & Scanner Reticle (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="card p-2 border border-cyan-500/30 bg-slate-950 relative overflow-hidden rounded-2xl shadow-2xl">
+            <div className="card p-2 border border-cyan-500/30 bg-[#0b0f17] relative overflow-hidden rounded-lg shadow-2xl">
               {/* Flash effect */}
               {flashActive && (
                 <div className="absolute inset-0 bg-white z-40 transition-opacity duration-200 opacity-90 pointer-events-none" />
@@ -453,12 +453,12 @@ export default function GateKioskPage() {
                   <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6">
                     {/* Corner Target Brackets */}
                     <div className="flex justify-between">
-                      <div className="w-8 h-8 border-t-2 border-l-2 border-cyan-400 rounded-tl-lg shadow-glow-cyan" />
-                      <div className="w-8 h-8 border-t-2 border-r-2 border-cyan-400 rounded-tr-lg shadow-glow-cyan" />
+                      <div className="w-8 h-8 border-t-2 border-l-2 border-cyan-400 rounded-tl-lg shadow-panel" />
+                      <div className="w-8 h-8 border-t-2 border-r-2 border-cyan-400 rounded-tr-lg shadow-panel" />
                     </div>
 
                     {/* Animated Scanning Laser Line */}
-                    <div className="absolute inset-x-8 top-1/4 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-glow-cyan animate-pulse" />
+                    <div className="absolute inset-x-8 top-1/4 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-panel animate-pulse" />
 
                     {/* Center Face Target Reticle */}
                     <div className="self-center w-48 h-56 rounded-full border border-cyan-400/30 flex items-center justify-center">
@@ -466,25 +466,25 @@ export default function GateKioskPage() {
                     </div>
 
                     <div className="flex justify-between">
-                      <div className="w-8 h-8 border-b-2 border-l-2 border-cyan-400 rounded-bl-lg shadow-glow-cyan" />
-                      <div className="w-8 h-8 border-b-2 border-r-2 border-cyan-400 rounded-br-lg shadow-glow-cyan" />
+                      <div className="w-8 h-8 border-b-2 border-l-2 border-cyan-400 rounded-bl-lg shadow-panel" />
+                      <div className="w-8 h-8 border-b-2 border-r-2 border-cyan-400 rounded-br-lg shadow-panel" />
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Viewport Control Bar */}
-              <div className="p-4 bg-slate-900/80 backdrop-blur border-t border-white/[0.06] rounded-b-xl flex flex-wrap items-center justify-between gap-3">
+              <div className="p-4 bg-[#141b2a] backdrop-blur border-t border-white/[0.06] rounded-b-xl flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setAutoScan((a) => !a)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                       autoScan
-                        ? 'bg-cyan-500 text-slate-950 shadow-glow-cyan'
+                        ? 'bg-cyan-500 text-slate-950 shadow-panel'
                         : 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]'
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${autoScan ? 'bg-slate-950 animate-ping' : 'bg-slate-500'}`} />
+                    <span className={`w-2 h-2 rounded-full ${autoScan ? 'bg-[#0b0f17] animate-ping' : 'bg-slate-500'}`} />
                     {autoScan ? 'Auto-Scan Active (2.5s)' : 'Enable Auto-Scan'}
                   </button>
 
@@ -496,7 +496,7 @@ export default function GateKioskPage() {
                 <button
                   onClick={performScan}
                   disabled={!cameraActive || scanning}
-                  className="btn-primary text-sm px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-glow-cyan flex items-center gap-2"
+                  className="btn-primary text-sm px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-panel flex items-center gap-2"
                 >
                   {scanning ? (
                     <>
@@ -527,7 +527,7 @@ export default function GateKioskPage() {
                 {lastScanResult.recognized ? (
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-white/20 flex items-center justify-center text-xl font-black text-cyan-400 shrink-0">
+                      <div className="w-14 h-14 rounded-lg bg-slate-900 border border-white/20 flex items-center justify-center text-xl font-black text-cyan-400 shrink-0">
                         {lastScanResult.name?.[0]?.toUpperCase() ?? 'S'}
                       </div>
                       <div>
@@ -547,7 +547,7 @@ export default function GateKioskPage() {
                       <span
                         className={`text-sm font-bold uppercase tracking-wider px-4 py-2 rounded-xl border flex items-center gap-2 ${
                           lastScanResult.status === 'present'
-                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-glow-emerald'
+                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-panel'
                             : 'bg-amber-500 text-slate-950 border-amber-400'
                         }`}
                       >

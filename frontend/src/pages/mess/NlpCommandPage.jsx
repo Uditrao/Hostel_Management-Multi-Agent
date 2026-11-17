@@ -129,7 +129,7 @@ export default function NlpCommandPage() {
       </div>
 
       {/* Terminal Command Console Card */}
-      <div className="card border border-cyan-500/30 p-6 space-y-5 shadow-glow-cyan/10">
+      <div className="card border border-cyan-500/30 p-6 space-y-5 shadow-panel/10">
         <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-mono text-xs font-bold">
@@ -178,12 +178,12 @@ export default function NlpCommandPage() {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               placeholder="Type an inventory action, e.g. 'aaj 15 kilo chawal bana liye'..."
-              className="w-full pl-9 pr-28 py-3.5 rounded-2xl glass text-slate-100 placeholder-slate-500 border border-white/10 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition-all font-mono text-xs sm:text-sm"
+              className="w-full pl-9 pr-28 py-3.5 rounded-lg glass text-slate-100 placeholder-slate-500 border border-white/10 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition-all font-mono text-xs sm:text-sm"
             />
             <button
               type="submit"
               disabled={executing || !command.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 btn-primary py-2 px-4 text-xs flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-glow-cyan disabled:opacity-40"
+              className="absolute right-2 top-1/2 -translate-y-1/2 btn-primary py-2 px-4 text-xs flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold shadow-panel disabled:opacity-40"
             >
               {executing ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" />}
               {executing ? 'Parsing…' : 'Execute'}
@@ -197,7 +197,7 @@ export default function NlpCommandPage() {
 
         {/* Error Feedback */}
         {errorMsg && (
-          <div className="p-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-300 flex items-start gap-3 text-xs animate-slide-up">
+          <div className="p-4 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 flex items-start gap-3 text-xs animate-slide-up">
             <AlertTriangle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
             <div>
               <p className="font-semibold text-sm mb-0.5">Could Not Parse Command</p>
@@ -235,7 +235,7 @@ export default function NlpCommandPage() {
               return (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl bg-slate-950/60 border border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="p-4 rounded-xl bg-[#0b0f17]/60 border border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3">
                     <div
