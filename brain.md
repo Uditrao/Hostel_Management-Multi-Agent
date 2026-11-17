@@ -93,7 +93,10 @@
    - Features: Categorization (plumbing, electrical, civil, etc.) and urgency scoring via Groq Llama 3.3.
 5. **HERALD (`/herald`)**: Cross-agent safety orchestrator.
    - Files: `backend/agents/herald/orchestrator.py`, `router.py`.
-   - Features: Heuristic anomaly detection (e.g. resident present in hostel but missed 3 consecutive meal slots).
+   - Features: Heuristic anomaly detection (e.g. resident present in hostel but missed consecutive meals, outpass fraud / ghosting detection when on-leave student is detected at mess/gate kiosks, unhandled critical maintenance alerts).
+6. **NOURISH Sub-Agents (Roadmap)**:
+   - `NOURISH-Oracle`: ML Turnout demand forecasting engine (XGBoost / Random Forest).
+   - `NOURISH-Gusto`: Student dining feedback, sentiment analysis, and dynamic Dish Popularity Index (DPI).
 
 ---
 
