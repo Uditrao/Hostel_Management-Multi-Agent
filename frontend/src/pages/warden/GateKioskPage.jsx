@@ -15,10 +15,11 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Camera, Eye, ShieldCheck, CheckCircle2, AlertTriangle,
   RefreshCw, Sparkles, Clock, Users, Search, Volume2, VolumeX,
-  Maximize2, Minimize2, UserCheck, DoorOpen, Hash, Home, ArrowRight
+  Maximize2, Minimize2, UserCheck, DoorOpen, Hash, Home, ArrowRight, Settings
 } from 'lucide-react'
 import { wardenApi, sentinelApi } from '../../services/api'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import AttendanceWindowModal from '../../components/warden/AttendanceWindowModal'
 
 // Synthesize pleasant audio chimes using Web Audio API
 function playChime(type = 'success') {
@@ -90,6 +91,7 @@ export default function GateKioskPage() {
   const [todayLogs, setTodayLogs] = useState([])
   const [loadingLogs, setLoadingLogs] = useState(true)
   const [gateWindow, setGateWindow] = useState(null)
+  const [windowModalOpen, setWindowModalOpen] = useState(false)
 
   // Manual check-in states
   const [studentsList, setStudentsList] = useState([])
@@ -376,11 +378,21 @@ export default function GateKioskPage() {
           <p className="text-xs text-amber-400 uppercase font-semibold">Late Entries</p>
           <p className="text-2xl font-bold text-amber-300 mt-1">{lateCount}</p>
         </div>
-        <div className="card p-4 border border-violet-500/20 bg-violet-500/5">
-          <p className="text-xs text-violet-400 uppercase font-semibold">Curfew Window</p>
-          <p className="text-sm font-bold text-violet-300 mt-1.5">
-            {gateWindow?.start_time ? `${gateWindow.start_time.slice(0, 5)} - ${gateWindow.end_time.slice(0, 5)}` : '07:00 - 21:00'}
-          </p>
+        <div className="card p-4 border border-violet-500/20 bg-violet-500/5 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-violet-400 uppercase font-semibold">Curfew Window</p>
+            <p className="text-sm font-bold text-violet-300 mt-1.5">
+              {gateWindow?.start_time ? `${gateWindow.start_time.slice(0, 5)} - ${gateWindow.end_time.slice(0, 5)}` : '19:00 - 22:30'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setWindowModalOpen(true)}
+            className="p-2 bg-violet-600/20 hover:bg-violet-600/40 border border-violet-500/30 rounded-lg text-violet-300 hover:text-white transition-colors cursor-pointer"
+            title="Configure Curfew Window"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -719,6 +731,16 @@ export default function GateKioskPage() {
           </div>
         </div>
       )}
+
+      <AttendanceWindowModal
+        isOpen={windowModalOpen}
+        onClose={() => setWindowModalOpen(false)}
+        initialWindow={gateWindow}
+        onSaved={(newWin) => {
+          setGateWindow(newWin)
+          loadGateData()
+        }}
+      />
     </div>
   )
 }
