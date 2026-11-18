@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 import re
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, time
 from typing import Any, Dict, List, Optional
 
 from db.supabase_client import get_client
@@ -111,20 +111,61 @@ def _insert_flag_safe(
     detail: str,
 ) -> Optional[Dict[str, Any]]:
     """
-    Insert an anomaly flag. If a duplicate exists for today (unique index on
-    student_id + type + date), the insert is silently skipped.
-    Returns the new row dict, or None on duplicate / error.
+    Insert an anomaly flag with active deduplication.
+    If an unseen flag or a flag created today already exists for this student & type:
+      - If detail differs, update the existing row with the latest detail.
+      - If detail is identical, skip inserting a duplicate row.
+    Returns the row dict or None on duplicate / error.
     """
     clean_sid = _clean_uuid(student_id)
-    payload: Dict[str, Any] = {
-        "type":           flag_type,
-        "detail":         detail,
-        "seen_by_warden": False,
-    }
-    if clean_sid:
-        payload["student_id"] = clean_sid
+    now = _now_ist()
+    today_start_iso = datetime.combine(now.date(), time.min, tzinfo=IST_OFFSET).isoformat()
 
     try:
+        # Query for existing flags for this student & type
+        query = client.table("anomaly_flags").select("*").eq("type", flag_type)
+        if clean_sid:
+            query = query.eq("student_id", clean_sid)
+        else:
+            query = query.eq("detail", detail)
+
+        existing_res = query.order("created_at", desc=True).limit(5).execute()
+        existing_rows = existing_res.data or []
+
+        for row in existing_rows:
+            row_seen = row.get("seen_by_warden", False)
+            row_created = row.get("created_at", "")
+            is_today = row_created >= today_start_iso if row_created else False
+
+            # If flag is active (unseen) or was already created today:
+            if not row_seen or is_today:
+                if row.get("detail") != detail:
+                    # Update existing flag with latest detail
+                    upd_res = (
+                        client.table("anomaly_flags")
+                        .update({"detail": detail, "created_at": now.isoformat()})
+                        .eq("id", row["id"])
+                        .execute()
+                    )
+                    logger.info("HERALD flag detail updated: id=%s type=%s", row["id"], flag_type)
+                    return upd_res.data[0] if upd_res.data else row
+
+                # Identical flag already active for today — skip duplicate
+                logger.info(
+                    "HERALD flag already exists (duplicate skipped): type=%s student=%s",
+                    flag_type, clean_sid or "N/A",
+                )
+                return None
+
+        # Insert fresh flag
+        payload: Dict[str, Any] = {
+            "type":           flag_type,
+            "detail":         detail,
+            "seen_by_warden": False,
+        }
+        if clean_sid:
+            payload["student_id"] = clean_sid
+
         res = client.table("anomaly_flags").insert(payload).execute()
         rows = res.data or []
         if rows:
@@ -135,9 +176,8 @@ def _insert_flag_safe(
             return rows[0]
         return None
     except Exception as exc:
-        # Unique-constraint violation = duplicate for today; totally expected.
         logger.debug(
-            "HERALD: flag insert skipped (duplicate or error) type=%s student=%s: %s",
+            "HERALD: flag insert skipped (error or constraint) type=%s student=%s: %s",
             flag_type, student_id, exc,
         )
         return None
@@ -156,6 +196,12 @@ def _check_attendance_missed(client) -> List[Dict[str, Any]]:
     now = _now_ist()
     cutoff_iso = (now - timedelta(days=ATTEND_LOOKBACK_DAYS)).isoformat()
     new_flags: List[Dict[str, Any]] = []
+
+    # Clean up legacy single-meal false alarms if any exist
+    try:
+        client.table("anomaly_flags").delete().ilike("detail", "%1 meal%").execute()
+    except Exception:
+        pass
 
     try:
         students_res = client.table("students").select("id, name, roll_no, room_no, enrolled_at").execute()
@@ -221,21 +267,27 @@ def _check_attendance_missed(client) -> List[Dict[str, Any]]:
                 roll = student.get("roll_no", "?")
                 room = student.get("room_no", "?")
 
-                # Case 1: Missing BOTH Gate AND Mess -> CRITICAL DUAL ABSENCE
-                if has_full_meal_history and sid not in students_who_ate:
-                    hours_approx = round(len(recent_slots) * 8)
-                    detail = (
-                        f"CRITICAL DUAL ABSENCE: {name} (Roll: {roll}, Room: {room}) "
-                        f"has neither marked gate attendance in {ATTEND_LOOKBACK_DAYS} days "
-                        f"nor eaten in the last {len(recent_slots)} meals (~{hours_approx}h). "
-                        f"Immediate room inspection and parent contact required."
-                    )
+                if has_full_meal_history:
+                    # Case 1: Missing BOTH Gate AND Mess (6 meals / 48h) -> CRITICAL DUAL ABSENCE
+                    if sid not in students_who_ate:
+                        detail = (
+                            f"CRITICAL DUAL ABSENCE: {name} (Roll: {roll}, Room: {room}) "
+                            f"has neither marked gate attendance in {ATTEND_LOOKBACK_DAYS} days "
+                            f"nor eaten in the last {MESS_LOOKBACK_MEALS} meals (~48h). "
+                            f"Immediate room inspection and parent contact required."
+                        )
+                    else:
+                        # Case 2: Missing gate BUT dining normally -> GATE ATTENDANCE DEFICIT
+                        detail = (
+                            f"GATE ATTENDANCE DEFICIT: {name} (Roll: {roll}, Room: {room}) "
+                            f"has not marked gate attendance in the last {ATTEND_LOOKBACK_DAYS} days "
+                            f"(normal dining activity observed)."
+                        )
                 else:
-                    # Case 2: Missing gate BUT dining normally -> GATE ATTENDANCE DEFICIT
+                    # Fewer than 6 meal slots exist in DB -> standard 3-day gate deficit
                     detail = (
-                        f"GATE ATTENDANCE DEFICIT: {name} (Roll: {roll}, Room: {room}) "
-                        f"has not marked gate attendance in the last {ATTEND_LOOKBACK_DAYS} days "
-                        f"(normal dining activity observed)."
+                        f"{name} (Roll: {roll}, Room: {room}) "
+                        f"has not marked attendance in the last {ATTEND_LOOKBACK_DAYS} days."
                     )
 
                 row = _insert_flag_safe(client, sid, "attendance_missed", detail)
@@ -265,7 +317,7 @@ def _check_mess_missed_streak(client) -> List[Dict[str, Any]]:
 
     # Clean up legacy single-meal false alarms if any exist
     try:
-        client.table("anomaly_flags").delete().eq("type", "mess_missed_streak").ilike("detail", "%1 meal slot%").execute()
+        client.table("anomaly_flags").delete().ilike("detail", "%1 meal%").execute()
     except Exception:
         pass
 
@@ -294,10 +346,10 @@ def _check_mess_missed_streak(client) -> List[Dict[str, Any]]:
             reverse=True,
         )
 
-        # Guard: require at least MESS_LOOKBACK_MEALS (e.g. 6 meals / ~48h) in history
+        # Guard: require at least MESS_LOOKBACK_MEALS (6) distinct slots on record
         if len(distinct_slots) < MESS_LOOKBACK_MEALS:
             logger.info(
-                "HERALD: Insufficient mess slots recorded in lookback window (%d < %d required) -- skipping streak check.",
+                "HERALD: Only %d mess slots recorded in lookback window (need %d) -- skipping streak check.",
                 len(distinct_slots), MESS_LOOKBACK_MEALS,
             )
             return new_flags
@@ -339,15 +391,14 @@ def _check_mess_missed_streak(client) -> List[Dict[str, Any]]:
             if _is_new_student(student, now):
                 continue
 
-            # Medical distress: present in hostel BUT has missed 6 consecutive meals
+            # Medical distress: present in hostel BUT has missed 6 consecutive meals (~48h)
             if sid in students_at_hostel and sid not in students_who_ate:
                 name = student.get("name", "Unknown")
                 roll = student.get("roll_no", "?")
                 room = student.get("room_no", "?")
-                hours_approx = round(len(recent_slots) * 8)
                 detail = (
                     f"RESIDENT WELFARE ALERT: {name} (Roll: {roll}, Room: {room}) "
-                    f"is verified inside hostel premises but has missed {len(recent_slots)} consecutive meals (~{hours_approx}h). "
+                    f"is verified inside hostel premises but has missed {MESS_LOOKBACK_MEALS} consecutive meals (~48h). "
                     f"In-room medical check recommended."
                 )
                 row = _insert_flag_safe(client, sid, "mess_missed_streak", detail)
@@ -538,16 +589,33 @@ def get_anomaly_flags(
             f["students"] = f["student"]
 
         # Filter out legacy single-meal false alarms
-        flags = [f for f in flags if "1 meal slot" not in f.get("detail", "").lower()]
+        flags = [f for f in flags if "1 meal" not in f.get("detail", "").lower()]
 
-        # Unseen count across the whole table
-        unseen_res   = (
-            client.table("anomaly_flags")
-            .select("id", count="exact")
-            .eq("seen_by_warden", False)
-            .execute()
-        )
-        unseen_count = unseen_res.count if unseen_res.count is not None else len(unseen_res.data or [])
+        # Deduplicate rows by student and flag type (keep newest record)
+        seen_keys = set()
+        deduped_flags = []
+        dup_ids_to_clean = []
+        for f in flags:
+            stu = f.get("student") or {}
+            sid = f.get("student_id") or stu.get("roll_no") or f.get("detail", "")[:35]
+            ftype = f.get("type")
+            key = (sid, ftype)
+            if key not in seen_keys:
+                seen_keys.add(key)
+                deduped_flags.append(f)
+            else:
+                dup_ids_to_clean.append(f["id"])
+
+        flags = deduped_flags
+
+        # Silently clean up redundant duplicate rows from Supabase
+        if dup_ids_to_clean:
+            try:
+                client.table("anomaly_flags").delete().in_("id", dup_ids_to_clean).execute()
+            except Exception:
+                pass
+
+        unseen_count = sum(1 for f in flags if not f.get("seen_by_warden"))
 
         return {
             "success":       True,

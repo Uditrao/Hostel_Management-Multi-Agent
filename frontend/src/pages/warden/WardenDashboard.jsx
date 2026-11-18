@@ -66,12 +66,16 @@ export default function WardenDashboard() {
         wardenApi.getHeraldSummary(true).catch(() => ({ data: null })),
       ])
 
+      const fixrData = complaintsSummaryRes.data || {}
+      const openCount = fixrData.by_status?.open ?? fixrData.open ?? 0
+      const critCount = (fixrData.open_critical ?? 0) + (fixrData.open_high ?? 0)
+
       setStats({
-        defaultersToday:    defaultersRes.data?.defaulters?.length ?? null,
+        defaultersToday:    defaultersRes.data?.defaulter_count ?? defaultersRes.data?.defaulters?.length ?? 0,
         pendingApprovals:   pendingRes.data?.count ?? null,
-        openComplaints:     complaintsSummaryRes.data?.open ?? null,
-        criticalComplaints: complaintsSummaryRes.data?.high_critical_open ?? null,
-        unseenAnomalies:    anomaliesRes.data?.total ?? null,
+        openComplaints:     openCount,
+        criticalComplaints: critCount,
+        unseenAnomalies:    anomaliesRes.data?.unseen_count ?? anomaliesRes.data?.total ?? 0,
         gateWindow:         windowRes.data ?? null,
       })
       setRecentAnomalies(anomaliesRes.data?.flags?.slice(0, 4) ?? [])
