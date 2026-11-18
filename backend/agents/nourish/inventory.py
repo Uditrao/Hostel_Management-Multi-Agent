@@ -723,9 +723,46 @@ def get_active_alerts(urgency_filter: Optional[str] = None) -> Dict[str, Any]:
             query = query.eq("urgency", urgency_filter)
 
         res = query.execute()
-        alerts = res.data or []
-        # Sort by urgency severity
+        raw_alerts = res.data or []
+
+        # Fetch current stock mapping for enrichment
+        inv_map = {}
+        try:
+            inv_res = client.table("inventory").select("item_name, quantity_available, unit").execute()
+            for row in (inv_res.data or []):
+                k = (row.get("item_name") or "").strip().lower()
+                if k:
+                    inv_map[k] = row
+        except Exception as inv_err:
+            logger.debug("Failed to fetch inventory map for alerts: %s", inv_err)
+
+        # Deduplicate alerts by canonical item_name, retaining highest urgency
+        unique_map = {}
+        for alt in raw_alerts:
+            item_name = (alt.get("item_name") or "").strip()
+            key = item_name.lower()
+            if not key:
+                continue
+
+            inv_item = inv_map.get(key)
+            qty = inv_item.get("quantity_available", 0) if inv_item else 0
+            unit = inv_item.get("unit", "kg") if inv_item else "kg"
+
+            alt["current_stock"] = f"{float(qty):.1f} {unit}"
+            alt["threshold"] = alt.get("threshold") or f"10 {unit}"
+            alt["unit"] = unit
+
+            if key not in unique_map:
+                unique_map[key] = alt
+            else:
+                existing_urgency = URGENCY_ORDER.get(unique_map[key].get("urgency", "low"), 3)
+                current_urgency = URGENCY_ORDER.get(alt.get("urgency", "low"), 3)
+                if current_urgency < existing_urgency:
+                    unique_map[key] = alt
+
+        alerts = list(unique_map.values())
         alerts.sort(key=lambda a: URGENCY_ORDER.get(a.get("urgency", "low"), 3))
+
         return {
             "success": True,
             "total_alerts": len(alerts),
@@ -737,18 +774,44 @@ def get_active_alerts(urgency_filter: Optional[str] = None) -> Dict[str, Any]:
 
 
 def resolve_alert(alert_id: str) -> Dict[str, Any]:
-    """Mark an inventory alert as resolved."""
+    """Mark an inventory alert and any duplicate active alerts for that item as resolved."""
+    clean_aid = _clean_uuid(alert_id)
+    if not clean_aid:
+        return {"success": False, "error": "Invalid alert_id."}
+
     try:
         client = get_client()
+
+        # Retrieve item name to resolve duplicate active alerts for the same item
+        target_res = (
+            client.table("inventory_alerts")
+            .select("item_name")
+            .eq("id", clean_aid)
+            .limit(1)
+            .execute()
+        )
+        item_name = None
+        if target_res.data and len(target_res.data) > 0:
+            item_name = target_res.data[0].get("item_name")
+
+        # Resolve primary alert
         res = (
             client.table("inventory_alerts")
             .update({"resolved": True})
-            .eq("id", alert_id)
+            .eq("id", clean_aid)
             .execute()
         )
+
+        # Batch resolve all active duplicate alerts for the same item name
+        if item_name:
+            try:
+                client.table("inventory_alerts").update({"resolved": True}).eq("item_name", item_name).eq("resolved", False).execute()
+            except Exception as batch_err:
+                logger.debug("Failed batch resolve for %s: %s", item_name, batch_err)
+
         if res.data:
             return {"success": True, "alert": res.data[0]}
-        return {"success": False, "error": f"Alert {alert_id} not found."}
+        return {"success": True, "message": "Alert resolved"}
     except Exception as exc:
         logger.exception("NOURISH: resolve_alert error — %s", exc)
         return {"success": False, "error": str(exc)}

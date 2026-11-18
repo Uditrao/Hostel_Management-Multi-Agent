@@ -143,11 +143,49 @@ export default function InventoryPage() {
     }
   }
 
+  // Fast map of current inventory items for instant fallback lookup
+  const inventoryMap = useMemo(() => {
+    const map = {}
+    inventory.forEach((item) => {
+      if (item.item_name) {
+        map[item.item_name.toLowerCase().trim()] = item
+      }
+    })
+    return map
+  }, [inventory])
+
+  // Deduplicated and enriched active alerts (eliminates repeating ingredients in the banner)
+  const uniqueAlerts = useMemo(() => {
+    const seen = new Set()
+    const result = []
+    alerts.forEach((alt) => {
+      const key = (alt.item_name || '').toLowerCase().trim()
+      if (!key || seen.has(key)) return
+      seen.add(key)
+
+      const inv = inventoryMap[key]
+      const currentStock = alt.current_stock || (inv != null ? `${inv.quantity_available ?? 0} ${inv.unit || 'kg'}` : null)
+      const unit = alt.unit || inv?.unit || 'kg'
+      const threshold = alt.threshold || (inv ? `10 ${unit}` : null)
+
+      result.push({
+        ...alt,
+        current_stock: currentStock,
+        threshold: threshold,
+        unit,
+      })
+    })
+    return result
+  }, [alerts, inventoryMap])
+
   // Resolve alert
-  const handleResolveAlert = async (alertId) => {
+  const handleResolveAlert = async (alertId, itemName) => {
     try {
       await nourishApi.resolveAlert(alertId)
-      setAlerts((prev) => prev.filter((a) => a.id !== alertId))
+      const cleanKey = (itemName || '').toLowerCase().trim()
+      setAlerts((prev) =>
+        prev.filter((a) => a.id !== alertId && (!cleanKey || (a.item_name || '').toLowerCase().trim() !== cleanKey))
+      )
     } catch (err) {
       console.error('Error resolving alert:', err)
     }
@@ -249,7 +287,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Active Low Stock Alerts Banner */}
-      {alerts.length > 0 && (
+      {uniqueAlerts.length > 0 && (
         <div className="p-5 rounded-lg border border-rose-500/30 bg-rose-500/10 space-y-3 animate-slide-up">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -258,7 +296,7 @@ export default function InventoryPage() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-rose-200">
-                  {alerts.length} Ingredient{alerts.length > 1 ? 's' : ''} Below Safety Threshold
+                  {uniqueAlerts.length} Ingredient{uniqueAlerts.length > 1 ? 's' : ''} Below Safety Threshold
                 </h3>
                 <p className="text-xs text-rose-300/80">
                   Re-order required before next meal window to prevent preparation shortages.
@@ -269,9 +307,9 @@ export default function InventoryPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-            {alerts.map((alt) => (
+            {uniqueAlerts.map((alt) => (
               <div
-                key={alt.id}
+                key={alt.id || alt.item_name}
                 className="p-3 rounded-xl bg-[#0b0f17]/60 border border-rose-500/20 flex items-center justify-between gap-3"
               >
                 <div>
@@ -279,19 +317,20 @@ export default function InventoryPage() {
                     {alt.item_name}
                   </p>
                   <p className="text-[11px] text-slate-400 font-mono">
-                    Stock: <span className="text-rose-400 font-bold">{alt.current_stock}</span> / Min: {alt.threshold}
+                    Stock: <span className="text-rose-400 font-bold">{alt.current_stock || '0 kg'}</span>
+                    {alt.threshold && <span className="text-slate-400"> / Min: {alt.threshold}</span>}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => openAdjustment(alt.item_name, 'add', 'kg')}
+                    onClick={() => openAdjustment(alt.item_name, 'add', alt.unit || 'kg')}
                     className="btn-primary text-[10px] py-1 px-2 bg-amber-500 text-slate-950 font-semibold"
                   >
                     + Add
                   </button>
                   <button
-                    onClick={() => handleResolveAlert(alt.id)}
+                    onClick={() => handleResolveAlert(alt.id, alt.item_name)}
                     className="btn-secondary text-[10px] py-1 px-2"
                   >
                     Resolve
@@ -312,13 +351,13 @@ export default function InventoryPage() {
         </div>
         <div className="stat-card border border-amber-500/20">
           <span className="text-xs text-amber-400">Stock Alerts Active</span>
-          <p className="text-3xl font-bold text-amber-300">{alerts.length}</p>
+          <p className="text-3xl font-bold text-amber-300">{uniqueAlerts.length}</p>
           <span className="text-[11px] text-slate-500">Below threshold</span>
         </div>
         <div className="stat-card border border-emerald-500/20">
           <span className="text-xs text-emerald-400">Optimal Stock Level</span>
           <p className="text-3xl font-bold text-emerald-300">
-            {Math.max(0, inventory.length - alerts.length)}
+            {Math.max(0, inventory.length - uniqueAlerts.length)}
           </p>
           <span className="text-[11px] text-slate-500">Healthy supplies</span>
         </div>
