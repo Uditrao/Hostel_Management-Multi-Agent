@@ -20,17 +20,29 @@ const FLAG_TYPES = [
   { value: 'unresolved_complaint',    label: 'Unresolved Complaint' },
 ]
 
-const typeBadge = (t) => ({
-  attendance_missed:    'badge-amber',
-  mess_missed_streak:   'badge-violet',
-  unresolved_complaint: 'badge-rose',
-}[t] ?? 'badge-slate')
+const typeBadge = (flag) => {
+  const t = typeof flag === 'string' ? flag : flag?.type
+  const detail = typeof flag === 'object' ? (flag?.detail || '') : ''
+  if (detail.includes('CRITICAL DUAL ABSENCE')) return 'badge-rose'
+  return {
+    attendance_missed:    'badge-amber',
+    mess_missed_streak:   'badge-violet',
+    unresolved_complaint: 'badge-rose',
+  }[t] ?? 'badge-slate'
+}
 
-const typeLabel = (t) => ({
-  attendance_missed:    'Attendance Missed',
-  mess_missed_streak:   'Mess Missed Streak',
-  unresolved_complaint: 'Unresolved Complaint',
-}[t] ?? t)
+const typeLabel = (flag) => {
+  const t = typeof flag === 'string' ? flag : flag?.type
+  const detail = typeof flag === 'object' ? (flag?.detail || '') : ''
+  if (detail.includes('CRITICAL DUAL ABSENCE')) return 'Critical Dual Absence'
+  if (detail.includes('RESIDENT WELFARE')) return 'Resident Welfare Alert'
+  if (detail.includes('GATE ATTENDANCE DEFICIT')) return 'Gate Deficit'
+  return {
+    attendance_missed:    'Attendance Missed',
+    mess_missed_streak:   'Mess Missed Streak',
+    unresolved_complaint: 'Unresolved Complaint',
+  }[t] ?? t
+}
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -50,6 +62,7 @@ function resolveStudentInfo(flag) {
     const match = flag.detail.match(/(?:by\s+)?([A-Za-z0-9\s]+?)\s*\(Roll:\s*([^,\)]+)(?:,\s*Room:\s*([^,\)]+))?\)/i)
     if (match) {
       let extractedName = match[1].replace(/^(?:CRITICAL|HIGH|MEDIUM|LOW)\s+\w+\s+complaint\s+by\s+/i, '').trim()
+      extractedName = extractedName.replace(/^(?:CRITICAL DUAL ABSENCE|RESIDENT WELFARE ALERT|GATE ATTENDANCE DEFICIT):\s*/i, '').trim()
       if (extractedName) name = extractedName
       if (!roll_no && match[2]) roll_no = match[2].trim()
       if (!room_no && match[3]) room_no = match[3].trim()
@@ -65,12 +78,24 @@ function resolveStudentInfo(flag) {
 
 function formatCleanDetail(detail) {
   if (!detail) return ''
+  if (detail.includes('CRITICAL DUAL ABSENCE:')) {
+    const rest = detail.replace(/^CRITICAL DUAL ABSENCE:\s*[A-Za-z0-9\s]+?\s*\(Roll:[^\)]+\)\s*/i, '')
+    return `🚨 CRITICAL EMERGENCY — ${rest.charAt(0).toUpperCase() + rest.slice(1)}`
+  }
+  if (detail.includes('RESIDENT WELFARE ALERT:')) {
+    const rest = detail.replace(/^RESIDENT WELFARE ALERT:\s*[A-Za-z0-9\s]+?\s*\(Roll:[^\)]+\)\s*/i, '')
+    return `⚠️ MEDICAL ALERT — ${rest.charAt(0).toUpperCase() + rest.slice(1)}`
+  }
+  if (detail.includes('GATE ATTENDANCE DEFICIT:')) {
+    const rest = detail.replace(/^GATE ATTENDANCE DEFICIT:\s*[A-Za-z0-9\s]+?\s*\(Roll:[^\)]+\)\s*/i, '')
+    return `GATE DEFICIT — ${rest.charAt(0).toUpperCase() + rest.slice(1)}`
+  }
+
   // Strip repeated name and roll prefix if present
   const stripped = detail.replace(/^[A-Za-z0-9\s]+?\s*\(Roll:[^\)]+\)\s*/i, '')
   if (stripped && stripped !== detail) {
     return stripped.charAt(0).toUpperCase() + stripped.slice(1)
   }
-  // Clean up "complaint by Name (Roll: ...)" repetition
   const cleanComplaint = detail.replace(/\s+by\s+[A-Za-z0-9\s]+?\s*\(Roll:[^\)]+\)/i, '')
   return cleanComplaint || detail
 }
@@ -346,8 +371,8 @@ export default function AnomaliesPage() {
             >
               <div className="flex items-start gap-3 p-4">
                 {/* Type badge */}
-                <span className={`badge text-[10px] shrink-0 mt-0.5 ${typeBadge(flag.type)}`}>
-                  {typeLabel(flag.type)}
+                <span className={`badge text-[10px] shrink-0 mt-0.5 ${typeBadge(flag)}`}>
+                  {typeLabel(flag)}
                 </span>
 
                 {/* Content */}

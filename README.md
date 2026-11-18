@@ -14,7 +14,7 @@ A production-ready, autonomous multi-agent hostel operating system built on **Fa
 | **SENTINEL** 🛡️ | Curfew & Attendance | Rule Engine + APScheduler | Dynamic gate curfew enforcement (`PRESENT` vs `LATE ENTRY`), daily defaulter detection, warden window manager. |
 | **NOURISH** 🍽️ | Dining Logistics | Gemini 1.5/2.0 Flash + Groq Llama 3 + Heuristics | Mess entry gating, duplicate meal prevention, PDF weekly menu parsing, NLP inventory commands, food wastage tracking. |
 | **FIXR** 🔧 | Maintenance Triage | Groq Llama 3.3 70B Structured JSON | Natural language complaint parsing, auto-categorization, urgency scoring, technician ticket lifecycle. |
-| **HERALD** 🔍 | Autonomous Orchestrator | Cross-Agent Heuristic Engine | Safety & welfare monitoring (flags skipped meals, gate deficit anomalies), automated morning briefing digest. |
+| **HERALD** 🔍 | Autonomous Orchestrator | Cross-Agent Heuristic Engine | Multi-agent safety & welfare synthesis (resident medical distress, critical dual absence, gate deficits), automated morning briefing digest. |
 
 ---
 

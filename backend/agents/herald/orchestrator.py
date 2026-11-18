@@ -56,6 +56,36 @@ def _clean_uuid(val: Optional[str]) -> Optional[str]:
         return None
 
 
+def _get_students_on_leave(client, now: datetime) -> set:
+    """Return student_ids with active approved leave / outpass for immunity."""
+    try:
+        now_iso = now.isoformat()
+        res = (
+            client.table("student_outpasses")
+            .select("student_id")
+            .eq("status", "approved")
+            .lte("departure_datetime", now_iso)
+            .gte("expected_return_datetime", now_iso)
+            .execute()
+        )
+        return {r["student_id"] for r in (res.data or []) if r.get("student_id")}
+    except Exception:
+        # Table not yet mounted in Phase 10 — safe fallback
+        return set()
+
+
+def _is_new_student(student: dict, now: datetime) -> bool:
+    """Return True if student was enrolled less than ATTEND_LOOKBACK_DAYS ago (grace period)."""
+    enrolled_at_str = student.get("enrolled_at")
+    if not enrolled_at_str:
+        return False
+    try:
+        enrolled_dt = datetime.fromisoformat(enrolled_at_str.replace("Z", "+00:00"))
+        return (now - enrolled_dt).total_seconds() < (ATTEND_LOOKBACK_DAYS * 86400)
+    except Exception:
+        return False
+
+
 def _extract_student_from_detail(detail: str) -> Optional[Dict[str, Optional[str]]]:
     """Fallback extractor when direct student FK join is not populated."""
     if not detail:
@@ -67,6 +97,7 @@ def _extract_student_from_detail(detail: str) -> Optional[Dict[str, Optional[str
     if match:
         name = match.group(1).strip()
         name = re.sub(r"^(?:CRITICAL|HIGH|MEDIUM|LOW)\s+\w+\s+complaint\s+by\s+", "", name, flags=re.I).strip()
+        name = re.sub(r"^(?:CRITICAL DUAL ABSENCE|RESIDENT WELFARE ALERT|GATE ATTENDANCE DEFICIT):\s*", "", name, flags=re.I).strip()
         roll = match.group(2).strip() if match.group(2) else None
         room = match.group(3).strip() if match.group(3) else None
         return {"name": name, "roll_no": roll, "room_no": room}
@@ -112,38 +143,101 @@ def _insert_flag_safe(
         return None
 
 
-# -- Check 1: Attendance Missed ------------------------------------------------
+# -- Check 1: Attendance Missed & Dual Absence Correlation ------------------
 
 def _check_attendance_missed(client) -> List[Dict[str, Any]]:
     """
-    Flag enrolled students with ZERO attendance_logs entries
-    in the last ATTEND_LOOKBACK_DAYS calendar days (IST).
+    Flag enrolled students with ZERO attendance_logs entries in the last ATTEND_LOOKBACK_DAYS.
+    Correlates with dining activity:
+      - If missing BOTH gate (3d) AND mess (6 meals / 48h) -> CRITICAL DUAL ABSENCE (emergency)
+      - If missing gate BUT eating normally at mess -> GATE ATTENDANCE DEFICIT
+    Suppressed for students with active approved leave (immunity) or in grace period (<3d).
     """
     now = _now_ist()
     cutoff_iso = (now - timedelta(days=ATTEND_LOOKBACK_DAYS)).isoformat()
     new_flags: List[Dict[str, Any]] = []
 
     try:
-        students_res = client.table("students").select("id, name, roll_no, room_no").execute()
+        students_res = client.table("students").select("id, name, roll_no, room_no, enrolled_at").execute()
         students = students_res.data or []
 
+        # Gate attendees in window
         att_res = (
             client.table("attendance_logs")
             .select("student_id")
             .gte("timestamp", cutoff_iso)
             .execute()
         )
-        attended_ids = {row["student_id"] for row in (att_res.data or [])}
+        attended_ids = {row["student_id"] for row in (att_res.data or []) if row.get("student_id")}
+
+        # Dining activity in window
+        mess_res = (
+            client.table("mess_entries")
+            .select("student_id, meal_type, timestamp")
+            .eq("is_recognized", True)
+            .gte("timestamp", cutoff_iso)
+            .execute()
+        )
+        mess_data = mess_res.data or []
+        _meal_rank = {"breakfast": 1, "lunch": 2, "dinner": 3}
+        distinct_slots = list({
+            (row["meal_type"], row["timestamp"][:10])
+            for row in mess_data
+            if row.get("timestamp") and row.get("meal_type")
+        })
+        distinct_slots.sort(
+            key=lambda slot: (slot[1], _meal_rank.get(slot[0], 0)),
+            reverse=True,
+        )
+        has_full_meal_history = len(distinct_slots) >= MESS_LOOKBACK_MEALS
+        recent_slots = distinct_slots[:MESS_LOOKBACK_MEALS]
+        recent_slot_set = set(recent_slots)
+        students_who_ate = {
+            row["student_id"]
+            for row in mess_data
+            if (row["meal_type"], row["timestamp"][:10]) in recent_slot_set
+            and row.get("student_id")
+        }
+
+        # Immunity check: students on approved leave
+        students_on_leave = _get_students_on_leave(client, now)
 
         for student in students:
             sid = student.get("id")
-            if sid and sid not in attended_ids:
-                detail = (
-                    f"{student.get('name', 'Unknown')} "
-                    f"(Roll: {student.get('roll_no', '?')}, "
-                    f"Room: {student.get('room_no', '?')}) "
-                    f"has not marked attendance in the last {ATTEND_LOOKBACK_DAYS} days."
-                )
+            if not sid:
+                continue
+
+            # Immunity: on approved leave
+            if sid in students_on_leave:
+                continue
+
+            # Grace period: enrolled less than 3 days ago
+            if _is_new_student(student, now):
+                continue
+
+            # Student has not marked gate attendance
+            if sid not in attended_ids:
+                name = student.get("name", "Unknown")
+                roll = student.get("roll_no", "?")
+                room = student.get("room_no", "?")
+
+                # Case 1: Missing BOTH Gate AND Mess -> CRITICAL DUAL ABSENCE
+                if has_full_meal_history and sid not in students_who_ate:
+                    hours_approx = round(len(recent_slots) * 8)
+                    detail = (
+                        f"CRITICAL DUAL ABSENCE: {name} (Roll: {roll}, Room: {room}) "
+                        f"has neither marked gate attendance in {ATTEND_LOOKBACK_DAYS} days "
+                        f"nor eaten in the last {len(recent_slots)} meals (~{hours_approx}h). "
+                        f"Immediate room inspection and parent contact required."
+                    )
+                else:
+                    # Case 2: Missing gate BUT dining normally -> GATE ATTENDANCE DEFICIT
+                    detail = (
+                        f"GATE ATTENDANCE DEFICIT: {name} (Roll: {roll}, Room: {room}) "
+                        f"has not marked gate attendance in the last {ATTEND_LOOKBACK_DAYS} days "
+                        f"(normal dining activity observed)."
+                    )
+
                 row = _insert_flag_safe(client, sid, "attendance_missed", detail)
                 if row:
                     new_flags.append(row)
@@ -158,14 +252,22 @@ def _check_attendance_missed(client) -> List[Dict[str, Any]]:
     return new_flags
 
 
-# -- Check 2: Mess Missed Streak -----------------------------------------------
+# -- Check 2: Mess Missed Streak (Resident Medical Distress) ------------------
 
 def _check_mess_missed_streak(client) -> List[Dict[str, Any]]:
     """
-    Flag enrolled students with ZERO recognised mess_entries in the last
-    MESS_LOOKBACK_MEALS distinct meal slots (meal_type x date combos).
+    Flag students with ZERO recognised mess_entries across at least MESS_LOOKBACK_MEALS (~48h)
+    who ARE present in the hostel (verified by gate attendance) -> RESIDENT WELFARE ALERT.
+    (Students who missed both gate and mess are already flagged with CRITICAL DUAL ABSENCE).
+    Suppressed for students with active approved leave or in grace period (<3d).
     """
     new_flags: List[Dict[str, Any]] = []
+
+    # Clean up legacy single-meal false alarms if any exist
+    try:
+        client.table("anomaly_flags").delete().eq("type", "mess_missed_streak").ilike("detail", "%1 meal slot%").execute()
+    except Exception:
+        pass
 
     try:
         now = _now_ist()
@@ -191,12 +293,16 @@ def _check_mess_missed_streak(client) -> List[Dict[str, Any]]:
             key=lambda slot: (slot[1], _meal_rank.get(slot[0], 0)),
             reverse=True,
         )
-        recent_slots = distinct_slots[:MESS_LOOKBACK_MEALS]
 
-        if not recent_slots:
-            logger.info("HERALD: No recent mess slots found -- skipping mess streak check.")
+        # Guard: require at least MESS_LOOKBACK_MEALS (e.g. 6 meals / ~48h) in history
+        if len(distinct_slots) < MESS_LOOKBACK_MEALS:
+            logger.info(
+                "HERALD: Insufficient mess slots recorded in lookback window (%d < %d required) -- skipping streak check.",
+                len(distinct_slots), MESS_LOOKBACK_MEALS,
+            )
             return new_flags
 
+        recent_slots = distinct_slots[:MESS_LOOKBACK_MEALS]
         recent_slot_set = set(recent_slots)
         students_who_ate = {
             row["student_id"]
@@ -205,17 +311,44 @@ def _check_mess_missed_streak(client) -> List[Dict[str, Any]]:
             and row.get("student_id")
         }
 
-        students_res = client.table("students").select("id, name, roll_no, room_no").execute()
+        # Check gate attendance (student is verified active inside hostel)
+        att_res = (
+            client.table("attendance_logs")
+            .select("student_id")
+            .gte("timestamp", lookback_iso)
+            .execute()
+        )
+        students_at_hostel = {row["student_id"] for row in (att_res.data or []) if row.get("student_id")}
+
+        students_res = client.table("students").select("id, name, roll_no, room_no, enrolled_at").execute()
         students = students_res.data or []
+
+        # Immunity check: students on approved leave
+        students_on_leave = _get_students_on_leave(client, now)
 
         for student in students:
             sid = student.get("id")
-            if sid and sid not in students_who_ate:
+            if not sid:
+                continue
+
+            # Immunity: on approved leave
+            if sid in students_on_leave:
+                continue
+
+            # Grace period
+            if _is_new_student(student, now):
+                continue
+
+            # Medical distress: present in hostel BUT has missed 6 consecutive meals
+            if sid in students_at_hostel and sid not in students_who_ate:
+                name = student.get("name", "Unknown")
+                roll = student.get("roll_no", "?")
+                room = student.get("room_no", "?")
+                hours_approx = round(len(recent_slots) * 8)
                 detail = (
-                    f"{student.get('name', 'Unknown')} "
-                    f"(Roll: {student.get('roll_no', '?')}, "
-                    f"Room: {student.get('room_no', '?')}) "
-                    f"has not visited the mess in the last {len(recent_slots)} meal slots."
+                    f"RESIDENT WELFARE ALERT: {name} (Roll: {roll}, Room: {room}) "
+                    f"is verified inside hostel premises but has missed {len(recent_slots)} consecutive meals (~{hours_approx}h). "
+                    f"In-room medical check recommended."
                 )
                 row = _insert_flag_safe(client, sid, "mess_missed_streak", detail)
                 if row:
@@ -403,6 +536,9 @@ def get_anomaly_flags(
 
             f["student"] = stu or {"name": "Hostel Resident"}
             f["students"] = f["student"]
+
+        # Filter out legacy single-meal false alarms
+        flags = [f for f in flags if "1 meal slot" not in f.get("detail", "").lower()]
 
         # Unseen count across the whole table
         unseen_res   = (

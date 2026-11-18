@@ -97,11 +97,18 @@ export default function WardenDashboard() {
     }
   }
 
-  const flagTypeLabel = (t) => ({
-    attendance_missed:    'GATE DEFICIT',
-    mess_missed_streak:   'DINING STREAK',
-    unresolved_complaint: 'STALLED TICKET',
-  }[t] ?? t.toUpperCase())
+  const flagTypeLabel = (flag) => {
+    const t = typeof flag === 'string' ? flag : flag?.type
+    const detail = typeof flag === 'object' ? (flag?.detail || '') : ''
+    if (detail.includes('CRITICAL DUAL ABSENCE')) return 'DUAL ABSENCE'
+    if (detail.includes('RESIDENT WELFARE')) return 'WELFARE ALERT'
+    if (detail.includes('GATE ATTENDANCE DEFICIT')) return 'GATE DEFICIT'
+    return {
+      attendance_missed:    'GATE DEFICIT',
+      mess_missed_streak:   'DINING STREAK',
+      unresolved_complaint: 'STALLED TICKET',
+    }[t] ?? t?.toUpperCase?.() ?? 'EXCEPTION'
+  }
 
   if (loading) {
     return (
@@ -398,7 +405,7 @@ export default function WardenDashboard() {
                       </p>
                     </div>
                     <span className="text-[10px] px-2 py-0.5 bg-[#1c1c1c] border border-[#333333] text-white shrink-0">
-                      {flagTypeLabel(flag.type)}
+                      {flagTypeLabel(flag)}
                     </span>
                   </div>
                 )

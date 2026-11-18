@@ -87,13 +87,17 @@
    - Functions: `record_gate_attendance()`, `get_defaulters()`, `update_attendance_window()`.
 3. **NOURISH (`/nourish`)**: Dining logistics & mess operations.
    - Files: `backend/agents/nourish/entry.py`, `inventory.py`, `menu.py`, `nlp_command.py`, `router.py`.
-   - Features: Mess kiosk duplicate prevention, weekly PDF menu parsing with Gemini, stock depletion, food wastage logger.
+   - Features: Mess kiosk duplicate prevention, weekly PDF menu parsing with Gemini, stock depletion, food wastage logger, item-deduplicated low-stock alerts with live stock level enrichment.
 4. **FIXR (`/fixr`)**: Autonomous maintenance triage.
    - Files: `backend/agents/fixr/complaints.py`, `groq_client.py`, `router.py`.
    - Features: Categorization (plumbing, electrical, civil, etc.) and urgency scoring via Groq Llama 3.3.
 5. **HERALD (`/herald`)**: Cross-agent safety orchestrator.
    - Files: `backend/agents/herald/orchestrator.py`, `router.py`.
-   - Features: Heuristic anomaly detection (e.g. resident present in hostel but missed consecutive meals, outpass fraud / ghosting detection when on-leave student is detected at mess/gate kiosks, unhandled critical maintenance alerts).
+   - Features: Multi-agent anomaly correlation with 3-tier synthesis:
+     - `CRITICAL DUAL ABSENCE`: Student missing from both Gate (3d) and Mess (6 meals / 48h) with zero approved leave.
+     - `RESIDENT WELFARE ALERT`: Verified inside hostel premises but missed 6 consecutive meals (~48h) (in-room medical/sickness check).
+     - `GATE ATTENDANCE DEFICIT`: Eating normally in mess but zero gate scans for 3 days.
+     - Guards: Grace period for students enrolled <3 days, minimum 6-meal history guard, and outpass leave immunity.
 6. **NOURISH Sub-Agents (Roadmap)**:
    - `NOURISH-Oracle`: ML Turnout demand forecasting engine (XGBoost / Random Forest).
    - `NOURISH-Gusto`: Student dining feedback, sentiment analysis, and dynamic Dish Popularity Index (DPI).
