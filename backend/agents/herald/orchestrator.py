@@ -24,6 +24,7 @@ Public API
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
@@ -53,6 +54,23 @@ def _clean_uuid(val: Optional[str]) -> Optional[str]:
         return str(uuid.UUID(str(val).strip()))
     except (ValueError, AttributeError):
         return None
+
+
+def _extract_student_from_detail(detail: str) -> Optional[Dict[str, Optional[str]]]:
+    """Fallback extractor when direct student FK join is not populated."""
+    if not detail:
+        return None
+    match = re.search(
+        r"(?:by\s+)?([A-Za-z0-9\s]+?)\s*\(Roll:\s*([^,\)]+)(?:,\s*Room:\s*([^,\)]+))?\)",
+        detail,
+    )
+    if match:
+        name = match.group(1).strip()
+        name = re.sub(r"^(?:CRITICAL|HIGH|MEDIUM|LOW)\s+\w+\s+complaint\s+by\s+", "", name, flags=re.I).strip()
+        roll = match.group(2).strip() if match.group(2) else None
+        room = match.group(3).strip() if match.group(3) else None
+        return {"name": name, "roll_no": roll, "room_no": room}
+    return None
 
 
 def _insert_flag_safe(
@@ -369,6 +387,22 @@ def get_anomaly_flags(
         query = query.range(offset, offset + limit - 1)
         res   = query.execute()
         flags = res.data or []
+
+        # Normalize student relationship and fallback extract from detail if needed
+        for f in flags:
+            stu = f.get("students") or f.get("student")
+            if isinstance(stu, list) and len(stu) > 0:
+                stu = stu[0]
+            elif not isinstance(stu, dict):
+                stu = None
+
+            if not stu or not stu.get("name") or stu.get("name") == "Unknown":
+                extracted = _extract_student_from_detail(f.get("detail", ""))
+                if extracted:
+                    stu = {**(stu or {}), **extracted}
+
+            f["student"] = stu or {"name": "Hostel Resident"}
+            f["students"] = f["student"]
 
         # Unseen count across the whole table
         unseen_res   = (

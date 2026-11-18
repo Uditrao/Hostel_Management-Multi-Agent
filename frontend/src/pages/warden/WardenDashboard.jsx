@@ -368,24 +368,41 @@ export default function WardenDashboard() {
             </div>
           ) : (
             <div className="space-y-2">
-              {recentAnomalies.map((flag) => (
-                <div
-                  key={flag.id}
-                  className="p-3 bg-[#121212] border border-[#222222] flex items-center justify-between gap-3 text-xs"
-                >
-                  <div className="min-w-0">
-                    <p className="text-white font-sans font-medium truncate">
-                      {flag.student?.name ?? flag.detail ?? 'UNREGISTERED ENTITY'}
-                    </p>
-                    <p className="text-[11px] text-[#777777] mt-0.5">
-                      {flag.student?.roll_no ? `${flag.student.roll_no} • ROOM ${flag.student.room_no || '—'}` : flag.detail}
-                    </p>
+              {recentAnomalies.map((flag) => {
+                const raw = flag.student || (Array.isArray(flag.students) ? flag.students[0] : flag.students)
+                let name = raw?.name
+                let roll = raw?.roll_no
+                let room = raw?.room_no
+                if ((!name || name.toLowerCase() === 'unknown' || name.toLowerCase() === 'unregistered entity') && flag.detail) {
+                  const match = flag.detail.match(/(?:by\s+)?([A-Za-z0-9\s]+?)\s*\(Roll:\s*([^,\)]+)(?:,\s*Room:\s*([^,\)]+))?\)/i)
+                  if (match) {
+                    name = match[1].replace(/^(?:CRITICAL|HIGH|MEDIUM|LOW)\s+\w+\s+complaint\s+by\s+/i, '').trim()
+                    if (!roll) roll = match[2]?.trim()
+                    if (!room) room = match[3]?.trim()
+                  }
+                }
+                const displayName = name || 'Hostel Resident'
+                const displaySub = roll ? `${roll} • ROOM ${room || '—'}` : (flag.detail || 'Exception flag logged')
+
+                return (
+                  <div
+                    key={flag.id}
+                    className="p-3 bg-[#121212] border border-[#222222] flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-white font-sans font-medium truncate">
+                        {displayName}
+                      </p>
+                      <p className="text-[11px] text-[#777777] mt-0.5 truncate">
+                        {displaySub}
+                      </p>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 bg-[#1c1c1c] border border-[#333333] text-white shrink-0">
+                      {flagTypeLabel(flag.type)}
+                    </span>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 bg-[#1c1c1c] border border-[#333333] text-white shrink-0">
-                    {flagTypeLabel(flag.type)}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

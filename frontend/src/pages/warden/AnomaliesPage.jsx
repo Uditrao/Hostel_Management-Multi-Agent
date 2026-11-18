@@ -39,6 +39,42 @@ function fmtDate(iso) {
   })
 }
 
+function resolveStudentInfo(flag) {
+  const raw = flag.student || (Array.isArray(flag.students) ? flag.students[0] : flag.students)
+  let name = raw?.name
+  let roll_no = raw?.roll_no
+  let room_no = raw?.room_no
+
+  // Fallback: extract from flag.detail when name is missing or "Unknown"
+  if ((!name || name.toLowerCase() === 'unknown' || name.toLowerCase() === 'unknown student') && flag.detail) {
+    const match = flag.detail.match(/(?:by\s+)?([A-Za-z0-9\s]+?)\s*\(Roll:\s*([^,\)]+)(?:,\s*Room:\s*([^,\)]+))?\)/i)
+    if (match) {
+      let extractedName = match[1].replace(/^(?:CRITICAL|HIGH|MEDIUM|LOW)\s+\w+\s+complaint\s+by\s+/i, '').trim()
+      if (extractedName) name = extractedName
+      if (!roll_no && match[2]) roll_no = match[2].trim()
+      if (!room_no && match[3]) room_no = match[3].trim()
+    }
+  }
+
+  return {
+    name: name || 'Hostel Resident',
+    roll_no: roll_no || null,
+    room_no: room_no || null,
+  }
+}
+
+function formatCleanDetail(detail) {
+  if (!detail) return ''
+  // Strip repeated name and roll prefix if present
+  const stripped = detail.replace(/^[A-Za-z0-9\s]+?\s*\(Roll:[^\)]+\)\s*/i, '')
+  if (stripped && stripped !== detail) {
+    return stripped.charAt(0).toUpperCase() + stripped.slice(1)
+  }
+  // Clean up "complaint by Name (Roll: ...)" repetition
+  const cleanComplaint = detail.replace(/\s+by\s+[A-Za-z0-9\s]+?\s*\(Roll:[^\)]+\)/i, '')
+  return cleanComplaint || detail
+}
+
 export default function AnomaliesPage() {
   const [loading,     setLoading]     = useState(true)
   const [refreshing,  setRefreshing]  = useState(false)
@@ -295,69 +331,74 @@ export default function AnomaliesPage() {
 
       {/* Flag cards */}
       <div className="space-y-2">
-        {flags.map((flag) => (
-          <div
-            key={flag.id}
-            className={`card border transition-all ${
-              flag.seen_by_warden
-                ? 'border-white/[0.05] bg-white/[0.01] opacity-70'
-                : 'border-violet-500/20 bg-violet-500/[0.03]'
-            }`}
-          >
-            <div className="flex items-start gap-3 p-4">
-              {/* Type badge */}
-              <span className={`badge text-[10px] shrink-0 mt-0.5 ${typeBadge(flag.type)}`}>
-                {typeLabel(flag.type)}
-              </span>
+        {flags.map((flag) => {
+          const student = resolveStudentInfo(flag)
+          const cleanDetail = formatCleanDetail(flag.detail)
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-200 font-medium">
-                  {flag.student?.name ?? 'Unknown Student'}
-                </p>
-                <div className="flex items-center gap-3 mt-0.5 text-[11px] text-slate-500 flex-wrap">
-                  {flag.student?.roll_no && (
-                    <span className="flex items-center gap-1">
-                      <Hash className="w-3 h-3" /> {flag.student.roll_no}
-                    </span>
-                  )}
-                  {flag.student?.room_no && (
-                    <span className="flex items-center gap-1">
-                      <Home className="w-3 h-3" /> Room {flag.student.room_no}
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {fmtDate(flag.created_at)}
-                  </span>
-                </div>
-                {flag.detail && (
-                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                    {flag.detail}
+          return (
+            <div
+              key={flag.id}
+              className={`card border transition-all ${
+                flag.seen_by_warden
+                  ? 'border-white/[0.05] bg-white/[0.01] opacity-70'
+                  : 'border-violet-500/20 bg-violet-500/[0.03]'
+              }`}
+            >
+              <div className="flex items-start gap-3 p-4">
+                {/* Type badge */}
+                <span className={`badge text-[10px] shrink-0 mt-0.5 ${typeBadge(flag.type)}`}>
+                  {typeLabel(flag.type)}
+                </span>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-slate-200 font-semibold tracking-wide">
+                    {student.name}
                   </p>
+                  <div className="flex items-center gap-3 mt-0.5 text-[11px] text-slate-400 flex-wrap">
+                    {student.roll_no && (
+                      <span className="flex items-center gap-1 font-mono text-slate-300">
+                        <Hash className="w-3 h-3 text-violet-400" /> {student.roll_no}
+                      </span>
+                    )}
+                    {student.room_no && (
+                      <span className="flex items-center gap-1 text-slate-300">
+                        <Home className="w-3 h-3 text-violet-400" /> Room {student.room_no}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 text-slate-500">
+                      <Clock className="w-3 h-3" /> {fmtDate(flag.created_at)}
+                    </span>
+                  </div>
+                  {cleanDetail && (
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed bg-black/20 p-2 rounded border border-white/[0.04]">
+                      {cleanDetail}
+                    </p>
+                  )}
+                </div>
+
+                {/* Action */}
+                {!flag.seen_by_warden ? (
+                  <button
+                    onClick={() => handleMarkSeen(flag.id)}
+                    disabled={markingId === flag.id}
+                    className="btn-ghost text-xs shrink-0 flex items-center gap-1 py-1"
+                  >
+                    {markingId === flag.id
+                      ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      : <Eye className="w-3.5 h-3.5" />
+                    }
+                    Mark seen
+                  </button>
+                ) : (
+                  <span className="text-[10px] text-slate-600 shrink-0 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Seen
+                  </span>
                 )}
               </div>
-
-              {/* Action */}
-              {!flag.seen_by_warden ? (
-                <button
-                  onClick={() => handleMarkSeen(flag.id)}
-                  disabled={markingId === flag.id}
-                  className="btn-ghost text-xs shrink-0 flex items-center gap-1 py-1"
-                >
-                  {markingId === flag.id
-                    ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    : <Eye className="w-3.5 h-3.5" />
-                  }
-                  Mark seen
-                </button>
-              ) : (
-                <span className="text-[10px] text-slate-600 shrink-0 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Seen
-                </span>
-              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
