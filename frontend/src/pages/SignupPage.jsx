@@ -84,11 +84,11 @@ export default function SignupPage() {
 
         {/* Brand Header */}
         <div className="flex flex-col items-center mb-8 text-center font-mono">
-          <BrandLogo size={42} className="mb-4" />
+          <BrandLogo size={52} className="mb-4" />
           <h1 className="text-xl font-bold text-white tracking-widest uppercase">
-            RESIDENT REGISTRATION
+            COHAVEN<span className="text-[#888888]">OS</span>
           </h1>
-          <p className="text-xs text-[#777777] mt-1">NEW FACILITY OCCUPANCY RECORD</p>
+          <p className="text-xs text-[#777777] mt-1">RESIDENT ENROLLMENT & OCCUPANCY REGISTRATION</p>
         </div>
 
         {/* Main Form Card */}

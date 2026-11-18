@@ -102,10 +102,10 @@ export default function HomePage() {
       <header className="border-b border-[#222222] bg-[#0c0c0c]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <BrandLogo size={28} />
+            <BrandLogo size={32} />
             <div className="flex items-baseline gap-2">
               <span className="font-bold text-white text-base tracking-widest font-mono uppercase">
-                KINESIS<span className="text-[#888888]">/OS</span>
+                COHAVEN<span className="text-[#888888]">OS</span>
               </span>
               <span className="hidden sm:inline-block text-[11px] font-mono text-[#666666]">
                 // FACILITY OPERATING ARCHITECTURE
@@ -299,8 +299,8 @@ export default function HomePage() {
       <footer className="mt-auto border-t border-[#222222] bg-[#0a0a0a] py-8 text-xs font-mono text-[#666666] relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <BrandLogo size={20} />
-            <span>KINESIS / HOSTELOS ENTERPRISE PLATFORM // {new Date().getFullYear()}</span>
+            <BrandLogo size={22} />
+            <span>COHAVENOS ENTERPRISE PLATFORM // {new Date().getFullYear()}</span>
           </div>
           <div className="flex items-center gap-4 text-[#888888]">
             <span>FACILITY OPS</span>
