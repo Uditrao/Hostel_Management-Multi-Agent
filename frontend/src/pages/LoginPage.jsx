@@ -54,9 +54,9 @@ export default function LoginPage() {
 
         {/* Brand Header */}
         <div className="flex flex-col items-center mb-8 text-center">
-          <BrandLogo size={42} className="mb-4" />
+          <BrandLogo size={52} className="mb-4" />
           <h1 className="text-xl font-bold text-white tracking-widest font-mono uppercase">
-            KINESIS<span className="text-[#888888]">/GATEWAY</span>
+            COHAVEN<span className="text-[#888888]">OS</span>
           </h1>
           <p className="text-xs text-[#777777] font-mono mt-1">SECURE ACCESS TO FACILITY SYSTEM</p>
         </div>

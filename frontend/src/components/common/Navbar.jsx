@@ -51,15 +51,15 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-[#0c0c0c] border-b border-[#242424]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
 
-        {/* Brand with distinctive logo */}
+        {/* Brand with distinctive CohavenOS logo */}
         <Link
           to={getRoleHome()}
           className="flex items-center gap-3 group"
         >
-          <BrandLogo size={26} />
+          <BrandLogo size={28} />
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-white text-sm tracking-widest font-mono uppercase">
-              KINESIS<span className="text-[#888888]">/OS</span>
+              COHAVEN<span className="text-[#888888]">OS</span>
             </span>
             <span className="hidden sm:inline-block text-[10px] font-mono text-[#666666] tracking-tight">
               [FACILITY // v2.4]
