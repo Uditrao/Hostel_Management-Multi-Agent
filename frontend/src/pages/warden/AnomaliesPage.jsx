@@ -4,7 +4,7 @@
  * Warden views HERALD cross-agent anomaly flags, triggers on-demand runs,
  * and marks flags as seen.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   AlertTriangle, RefreshCw, Zap, Eye,
   CheckCircle2, Filter, Clock, User,
@@ -138,6 +138,17 @@ export default function AnomaliesPage() {
 
   useEffect(() => { loadFlags(false) }, [unseenOnly, filterType])
 
+  const uniqueFlags = useMemo(() => {
+    const seen = new Set()
+    return flags.filter((f) => {
+      const student = resolveStudentInfo(f)
+      const key = `${f.student_id || student.roll_no || student.name}-${f.type}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [flags])
+
   const handleRunHerald = async () => {
     setRunning(true)
     setRunResult(null)
@@ -247,26 +258,24 @@ export default function AnomaliesPage() {
         <div className="stat-card border border-violet-500/20 bg-violet-500/5">
           <AlertTriangle className="w-5 h-5 text-violet-400" />
           <div>
-            <p className="text-2xl font-bold text-slate-200">{total}</p>
+            <p className="text-2xl font-bold text-slate-200">{uniqueFlags.length}</p>
             <p className="text-xs text-slate-400">Total Flags</p>
           </div>
         </div>
         <div className="stat-card border border-amber-500/20 bg-amber-500/5">
           <Eye className="w-5 h-5 text-amber-400" />
           <div>
-            <p className="text-2xl font-bold text-slate-200">{unseenCount}</p>
+            <p className="text-2xl font-bold text-slate-200">
+              {uniqueFlags.filter(f => !f.seen_by_warden).length}
+            </p>
             <p className="text-xs text-slate-400">Unread</p>
           </div>
         </div>
-        {['attendance_missed', 'mess_missed_streak', 'unresolved_complaint'].map((type) => {
-          const count = flags.filter((f) => f.type === type).length
-          return null // we only show 4 cards — skip for brevity
-        })}
         <div className="stat-card border border-amber-500/20 bg-amber-500/5">
           <User className="w-5 h-5 text-amber-400" />
           <div>
             <p className="text-2xl font-bold text-slate-200">
-              {flags.filter(f => f.type === 'attendance_missed').length}
+              {uniqueFlags.filter(f => f.type === 'attendance_missed').length}
             </p>
             <p className="text-xs text-slate-400">Attendance</p>
           </div>
@@ -275,7 +284,7 @@ export default function AnomaliesPage() {
           <AlertTriangle className="w-5 h-5 text-rose-400" />
           <div>
             <p className="text-2xl font-bold text-slate-200">
-              {flags.filter(f => f.type === 'unresolved_complaint').length}
+              {uniqueFlags.filter(f => f.type === 'unresolved_complaint').length}
             </p>
             <p className="text-xs text-slate-400">Open Complaints</p>
           </div>
@@ -337,12 +346,12 @@ export default function AnomaliesPage() {
           </select>
         </div>
         <span className="text-xs text-slate-500 self-center">
-          {flags.length} flag{flags.length !== 1 ? 's' : ''}
+          {uniqueFlags.length} flag{uniqueFlags.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Empty state */}
-      {flags.length === 0 && (
+      {uniqueFlags.length === 0 && (
         <div className="card border border-white/[0.08] py-16 text-center">
           <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
           <p className="text-slate-300 font-medium">
@@ -356,7 +365,7 @@ export default function AnomaliesPage() {
 
       {/* Flag cards */}
       <div className="space-y-2">
-        {flags.map((flag) => {
+        {uniqueFlags.map((flag) => {
           const student = resolveStudentInfo(flag)
           const cleanDetail = formatCleanDetail(flag.detail)
 

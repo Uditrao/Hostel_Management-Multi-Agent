@@ -337,16 +337,28 @@ def get_student_attendance(
 
 # ── Defaulters Calculation ───────────────────────────────────────────────────
 
+def _get_effective_curfew_date() -> date:
+    """
+    Return the effective curfew date in Asia/Kolkata timezone.
+    If the current time is early morning (before 06:00 IST), the relevant curfew
+    is the one that concluded last night (yesterday's date).
+    """
+    now_ist = _get_current_ist_datetime()
+    if now_ist.hour < 6:
+        return (now_ist - timedelta(days=1)).date()
+    return now_ist.date()
+
+
 def get_defaulters(target_date: Optional[date] = None) -> Dict[str, Any]:
     """
     Find all enrolled students who have not logged attendance on `target_date`.
-    Defaults to today's date in IST.
+    Defaults to the most recent effective curfew date in IST.
     """
     try:
         client = get_client()
 
         if target_date is None:
-            target_date = _get_current_ist_datetime().date()
+            target_date = _get_effective_curfew_date()
 
         date_str = target_date.isoformat()
         start_iso = datetime.combine(target_date, time.min, tzinfo=IST_TZ).isoformat()

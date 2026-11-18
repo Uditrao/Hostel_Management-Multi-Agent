@@ -14,16 +14,23 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const todayStr = () => {
-  const d = new Date()
-  return d.toISOString().split('T')[0]  // YYYY-MM-DD
+const getEffectiveDateStr = () => {
+  const now = new Date()
+  // Before 06:00 AM, default to the curfew cycle that concluded last night
+  if (now.getHours() < 6) {
+    now.setDate(now.getDate() - 1)
+  }
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export default function DefaultersPage() {
   const [loading,    setLoading]    = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [running,    setRunning]    = useState(false)
-  const [targetDate, setTargetDate] = useState(todayStr())
+  const [targetDate, setTargetDate] = useState(getEffectiveDateStr())
   const [defaulters, setDefaulters] = useState([])
   const [total,      setTotal]      = useState(0)
   const [search,     setSearch]     = useState('')
@@ -37,6 +44,9 @@ export default function DefaultersPage() {
       const res = await wardenApi.getDefaulters(date)
       setDefaulters(res.data?.defaulters ?? [])
       setTotal(res.data?.total_enrolled ?? 0)
+      if (res.data?.date && !date) {
+        setTargetDate(res.data.date)
+      }
     } catch (err) {
       setError(err?.detail ?? 'Failed to load defaulters.')
     } finally {
