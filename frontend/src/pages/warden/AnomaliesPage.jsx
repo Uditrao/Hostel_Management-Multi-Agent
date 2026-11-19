@@ -4,13 +4,14 @@
  * Warden views HERALD cross-agent anomaly flags, triggers on-demand runs,
  * and marks flags as seen.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   AlertTriangle, RefreshCw, Zap, Eye,
   CheckCircle2, Filter, Clock, User,
   Hash, Home, Cpu, ChevronDown, ChevronUp
 } from 'lucide-react'
 import { wardenApi } from '../../services/api'
+import { useWardenContext } from '../../context/WardenContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 const FLAG_TYPES = [
@@ -101,53 +102,45 @@ function formatCleanDetail(detail) {
 }
 
 export default function AnomaliesPage() {
-  const [loading,     setLoading]     = useState(true)
-  const [refreshing,  setRefreshing]  = useState(false)
+  const {
+    data,
+    loading: ctxLoading,
+    refreshing: ctxRefreshing,
+    refreshAnomalies,
+  } = useWardenContext()
+
   const [running,     setRunning]     = useState(false)
-  const [flags,       setFlags]       = useState([])
-  const [total,       setTotal]       = useState(0)
   const [unseenOnly,  setUnseenOnly]  = useState(false)
   const [filterType,  setFilterType]  = useState('')
   const [markingId,   setMarkingId]   = useState(null)
   const [runResult,   setRunResult]   = useState(null)
-  const [summary,     setSummary]     = useState(null)
   const [showSummary, setShowSummary] = useState(true)
 
-  const loadFlags = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true)
-    else setRefreshing(true)
-    try {
-      const [flagsRes, summaryRes] = await Promise.all([
-        wardenApi.getAnomalies({
-          unseenOnly,
-          flagType: filterType || null,
-          limit: 200,
-        }),
-        wardenApi.getHeraldSummary(false),
-      ])
-      setFlags(flagsRes.data?.flags ?? [])
-      setTotal(flagsRes.data?.total ?? 0)
-      setSummary(summaryRes.data?.summary ?? null)
-    } catch {
-      // keep
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [unseenOnly, filterType])
+  const summary = data.heraldSummary ?? null
 
-  useEffect(() => { loadFlags(false) }, [unseenOnly, filterType])
+  // Use Context cache; local filtering applied client-side
+  const allFlags = data.anomalies ?? []
+  const total    = data.anomaliesTotal ?? 0
+
+  // Apply local filters (unseen + type) to cached list — no extra API call needed
+  const filteredFlags = useMemo(() => {
+    return allFlags.filter((f) => {
+      if (unseenOnly && f.seen_by_warden) return false
+      if (filterType && f.type !== filterType) return false
+      return true
+    })
+  }, [allFlags, unseenOnly, filterType])
 
   const uniqueFlags = useMemo(() => {
     const seen = new Set()
-    return flags.filter((f) => {
+    return filteredFlags.filter((f) => {
       const student = resolveStudentInfo(f)
       const key = `${f.student_id || student.roll_no || student.name}-${f.type}`
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
-  }, [flags])
+  }, [filteredFlags])
 
   const handleRunHerald = async () => {
     setRunning(true)
@@ -158,7 +151,7 @@ export default function AnomaliesPage() {
         type: 'success',
         text: `HERALD run complete — ${res.data?.new_flags_created ?? 0} new flags created.`,
       })
-      await loadFlags(true)
+      await refreshAnomalies()
     } catch (err) {
       setRunResult({
         type: 'error',
@@ -173,9 +166,7 @@ export default function AnomaliesPage() {
     setMarkingId(flagId)
     try {
       await wardenApi.markAnomalySeen(flagId)
-      setFlags((prev) =>
-        prev.map((f) => (f.id === flagId ? { ...f, seen_by_warden: true } : f))
-      )
+      await refreshAnomalies()
     } catch {
       // ignore
     } finally {
@@ -184,15 +175,16 @@ export default function AnomaliesPage() {
   }
 
   const handleMarkAllSeen = async () => {
-    const unseen = flags.filter((f) => !f.seen_by_warden)
+    const unseen = allFlags.filter((f) => !f.seen_by_warden)
     for (const f of unseen) {
-      await handleMarkSeen(f.id)
+      await wardenApi.markAnomalySeen(f.id).catch(() => {})
     }
+    await refreshAnomalies()
   }
 
-  const unseenCount = flags.filter((f) => !f.seen_by_warden).length
+  const unseenCount = allFlags.filter((f) => !f.seen_by_warden).length
 
-  if (loading) {
+  if (ctxLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
@@ -233,11 +225,11 @@ export default function AnomaliesPage() {
             }
           </button>
           <button
-            onClick={() => loadFlags(true)}
-            disabled={refreshing}
+            onClick={refreshAnomalies}
+            disabled={ctxRefreshing}
             className="btn-ghost"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${ctxRefreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>

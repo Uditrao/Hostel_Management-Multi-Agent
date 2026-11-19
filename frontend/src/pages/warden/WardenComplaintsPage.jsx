@@ -10,6 +10,7 @@ import {
   User, Hash, Home, Save, X
 } from 'lucide-react'
 import { wardenApi } from '../../services/api'
+import { useWardenContext } from '../../context/WardenContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -46,19 +47,30 @@ function fmtDate(iso) {
 }
 
 export default function WardenComplaintsPage() {
-  const [loading,    setLoading]    = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [complaints, setComplaints] = useState([])
-  const [summary,    setSummary]    = useState({})
-  const [search,     setSearch]     = useState('')
-  const [filters,    setFilters]    = useState({ status: '', category: '', urgency: '' })
-  const [expanded,   setExpanded]   = useState(null)  // active complaint id
-  const [editing,    setEditing]    = useState({})     // { id: { status, note } }
-  const [saving,     setSaving]     = useState({})
-  const [saveMsg,    setSaveMsg]    = useState({})
+  const { data, loading: ctxLoading, refreshComplaints } = useWardenContext()
+
+  const [refreshing,      setRefreshing]      = useState(false)
+  const [localComplaints, setLocalComplaints] = useState(null)
+  const [localSummary,    setLocalSummary]    = useState(null)
+  const [search,          setSearch]          = useState('')
+  const [filters,         setFilters]         = useState({ status: '', category: '', urgency: '' })
+  const [expanded,        setExpanded]        = useState(null)  // active complaint id
+  const [editing,         setEditing]         = useState({})     // { id: { status, note } }
+  const [saving,          setSaving]          = useState({})
+  const [saveMsg,         setSaveMsg]         = useState({})
+
+  const hasActiveFilters = Boolean(filters.status || filters.category || filters.urgency)
+
+  const complaints = hasActiveFilters || localComplaints !== null
+    ? (localComplaints ?? [])
+    : (data.complaints ?? [])
+
+  const summary = hasActiveFilters || localSummary !== null
+    ? (localSummary ?? {})
+    : (data.complaintsGlobalSummary ?? {})
 
   const loadData = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true)
+    if (!silent) setRefreshing(true)
     else setRefreshing(true)
     try {
       const [cRes, sRes] = await Promise.all([
@@ -70,17 +82,26 @@ export default function WardenComplaintsPage() {
         }),
         wardenApi.getComplaintsSummary(),
       ])
-      setComplaints(cRes.data?.complaints ?? [])
-      setSummary(cRes.data?.global_summary ?? sRes.data ?? {})
+      setLocalComplaints(cRes.data?.complaints ?? [])
+      setLocalSummary(cRes.data?.global_summary ?? sRes.data ?? {})
+      if (!filters.status && !filters.category && !filters.urgency) {
+        refreshComplaints()
+      }
     } catch {
       // keep current
     } finally {
-      setLoading(false)
       setRefreshing(false)
     }
-  }, [filters])
+  }, [filters, refreshComplaints])
 
-  useEffect(() => { loadData(false) }, [filters])
+  useEffect(() => {
+    if (hasActiveFilters) {
+      loadData(false)
+    } else {
+      setLocalComplaints(null)
+      setLocalSummary(null)
+    }
+  }, [filters, hasActiveFilters, loadData])
 
   const setFilter = (key, val) => {
     setFilters((f) => ({ ...f, [key]: val }))
@@ -111,6 +132,7 @@ export default function WardenComplaintsPage() {
       await wardenApi.patchComplaint(complaint.id, payload)
       setSaveMsg((m) => ({ ...m, [complaint.id]: { type: 'success', text: 'Complaint updated successfully.' } }))
       await loadData(true)
+      await refreshComplaints(filters)
     } catch (err) {
       setSaveMsg((m) => ({
         ...m,
@@ -129,7 +151,7 @@ export default function WardenComplaintsPage() {
     c.student?.roll_no?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) {
+  if (ctxLoading && !localComplaints && (!data.complaints || data.complaints.length === 0)) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />

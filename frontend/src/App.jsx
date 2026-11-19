@@ -6,6 +6,7 @@
  */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { WardenProvider } from './context/WardenContext'
 
 import ProtectedRoute from './components/common/ProtectedRoute'
 import RootLayout from './components/layouts/RootLayout'
@@ -81,7 +82,7 @@ export default function App() {
               path="/warden"
               element={<ProtectedRoute allowedRoles={['warden']} />}
             >
-              <Route element={<WardenLayout />}>
+              <Route element={<WardenProvider><WardenLayout /></WardenProvider>}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard"  element={<WardenDashboard />} />
                 <Route path="kiosk"      element={<GateKioskPage />} />

@@ -12,14 +12,18 @@ import {
   Eye, ShieldAlert, Sparkles, AlertCircle, Users
 } from 'lucide-react'
 import { wardenApi } from '../../services/api'
+import { useWardenContext } from '../../context/WardenContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 export default function ApprovalsPage() {
+  const {
+    data,
+    loading: ctxLoading,
+    refreshing: ctxRefreshing,
+    refreshApprovals,
+  } = useWardenContext()
+
   const [activeTab,   setActiveTab]   = useState('pending') // 'pending' | 'approved'
-  const [loading,     setLoading]     = useState(true)
-  const [refreshing,  setRefreshing]  = useState(false)
-  const [pending,     setPending]     = useState([])
-  const [approved,    setApproved]    = useState([])
   const [search,      setSearch]      = useState('')
   const [loadError,   setLoadError]   = useState(null)
   const [approving,   setApproving]   = useState({})  // { userId: true }
@@ -27,42 +31,26 @@ export default function ApprovalsPage() {
   const [formData,    setFormData]    = useState({})  // { userId: { roll_no, room_no } }
   const [messages,    setMessages]    = useState({})  // { userId: { type, text } }
 
-  const loadData = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true)
-    else setRefreshing(true)
-    setLoadError(null)
+  // Read from Context cache
+  const pending  = data.pending  ?? []
+  const approved = data.approved ?? []
 
-    try {
-      const [pendingRes, approvedRes] = await Promise.all([
-        wardenApi.getPendingStudents(),
-        wardenApi.getApprovedStudents().catch(() => ({ data: { students: [] } })),
-      ])
-
-      const pendingList = pendingRes.data?.pending ?? []
-      setPending(pendingList)
-      setApproved(approvedRes.data?.students ?? [])
-
-      // Prefill formData for all pending students so 1-click approve works right away
-      const initialForm = {}
-      pendingList.forEach((s) => {
+  // Prefill formData for pending students when cache data arrives
+  useEffect(() => {
+    if (pending.length === 0) return
+    const initialForm = {}
+    pending.forEach((s) => {
+      if (!formData[s.id]) {
         initialForm[s.id] = {
           roll_no: s.roll_no || '',
           room_no: s.room_no || '',
         }
-      })
+      }
+    })
+    if (Object.keys(initialForm).length > 0) {
       setFormData((prev) => ({ ...initialForm, ...prev }))
-    } catch (err) {
-      console.error('Failed to load student approvals data:', err)
-      setLoadError(err?.response?.data?.detail || err?.message || 'Failed to load student data.')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
     }
-  }, [])
-
-  useEffect(() => {
-    loadData(false)
-  }, [loadData])
+  }, [pending])
 
   const toggleExpand = (student) => {
     setExpanded((e) => ({ ...e, [student.id]: !e[student.id] }))
@@ -114,7 +102,7 @@ export default function ApprovalsPage() {
 
       // Reload fresh data after short visual confirmation
       setTimeout(() => {
-        loadData(true)
+        refreshApprovals()
       }, 1200)
     } catch (err) {
       setMessages((m) => ({
@@ -150,7 +138,7 @@ export default function ApprovalsPage() {
     })
   }
 
-  if (loading) {
+  if (ctxLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
@@ -172,11 +160,11 @@ export default function ApprovalsPage() {
           </p>
         </div>
         <button
-          onClick={() => loadData(true)}
-          disabled={refreshing}
+          onClick={refreshApprovals}
+          disabled={ctxRefreshing}
           className="btn-secondary flex items-center gap-2 self-start sm:self-auto"
         >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${ctxRefreshing ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>

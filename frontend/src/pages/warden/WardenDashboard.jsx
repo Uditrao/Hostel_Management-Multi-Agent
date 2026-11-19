@@ -3,8 +3,11 @@
  * =================================================================
  * Executive facility command station built with pure high-contrast monochrome
  * aesthetics: deep black, dark charcoal, slate grey, off-white and razor-sharp borders.
+ *
+ * Speed-up: reads all data from WardenContext (shared cache, 60s TTL).
+ * Herald Summary renders independently — rest of page appears immediately.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users, AlertTriangle, Wrench, ShieldCheck,
@@ -13,91 +16,46 @@ import {
   CheckCircle2, XCircle, Zap, DoorOpen, Settings
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { wardenApi, sentinelApi } from '../../services/api'
+import { wardenApi } from '../../services/api'
+import { useWardenContext } from '../../context/WardenContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import AttendanceWindowModal from '../../components/warden/AttendanceWindowModal'
 
 const AGENTS = [
   { name: 'IRIS',     role: 'Vision Agent',          desc: 'MobileFaceNet 512-d biometric recognition & kiosk event dispatch', status: 'ONLINE' },
   { name: 'SENTINEL', role: 'Curfew & Gate Agent',    desc: 'Gate compliance verification, automated timestamping & curfew enforcement', status: 'ACTIVE' },
-  { name: 'NOURISH',  role: 'Dining Logistics Agent',desc: 'Dining entry gating, real-time inventory tracking & PDF menu parser', status: 'ONLINE' },
-  { name: 'FIXR',     role: 'Maintenance Agent',     desc: 'Automated ticket categorization & urgency triage via Groq LLM', status: 'ACTIVE' },
-  { name: 'HERALD',   role: 'Orchestrator Agent',    desc: 'Cross-agent anomaly heuristic correlation & warden morning briefing', status: 'ARMED' },
+  { name: 'NOURISH',  role: 'Dining Logistics Agent', desc: 'Dining entry gating, real-time inventory tracking & PDF menu parser', status: 'ONLINE' },
+  { name: 'FIXR',     role: 'Maintenance Agent',      desc: 'Automated ticket categorization & urgency triage via Groq LLM', status: 'ACTIVE' },
+  { name: 'HERALD',   role: 'Orchestrator Agent',     desc: 'Cross-agent anomaly heuristic correlation & warden morning briefing', status: 'ARMED' },
 ]
 
 export default function WardenDashboard() {
   const { user } = useAuth()
   const name = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'Warden'
 
-  const [loading,    setLoading]    = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [stats, setStats] = useState({
-    defaultersToday:  null,
-    pendingApprovals: null,
-    openComplaints:   null,
-    criticalComplaints: null,
-    unseenAnomalies:  null,
-    gateWindow:       null,
-  })
-  const [heraldSummary, setHeraldSummary] = useState(null)
-  const [recentAnomalies, setRecentAnomalies] = useState([])
-  const [recentComplaints, setRecentComplaints] = useState([])
+  const {
+    data,
+    loading,
+    refreshing,
+    heraldLoading,
+    refresh,
+    refreshAnomalies,
+    setGateWindow,
+    fetchHerald,
+  } = useWardenContext()
+
+  const { stats, heraldSummary, recentAnomalies, recentComplaints } = data
+
   const [windowModalOpen, setWindowModalOpen] = useState(false)
 
-  const loadData = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true)
-    else setRefreshing(true)
-    try {
-      const [
-        defaultersRes,
-        pendingRes,
-        complaintsSummaryRes,
-        anomaliesRes,
-        recentComplaintsRes,
-        windowRes,
-        heraldSummaryRes,
-      ] = await Promise.all([
-        wardenApi.getDefaulters().catch(() => ({ data: null })),
-        wardenApi.getPendingStudents().catch(() => ({ data: null })),
-        wardenApi.getFixrSummary().catch(() => ({ data: null })),
-        wardenApi.getAnomalies({ unseenOnly: true, limit: 5 }).catch(() => ({ data: null })),
-        wardenApi.getComplaints({ status: 'open', urgency: 'critical', limit: 3 }).catch(() => ({ data: null })),
-        sentinelApi.getWindow().catch(() => ({ data: null })),
-        wardenApi.getHeraldSummary(true).catch(() => ({ data: null })),
-      ])
-
-      const fixrData = complaintsSummaryRes.data || {}
-      const openCount = fixrData.by_status?.open ?? fixrData.open ?? 0
-      const critCount = (fixrData.open_critical ?? 0) + (fixrData.open_high ?? 0)
-
-      setStats({
-        defaultersToday:    defaultersRes.data?.defaulter_count ?? defaultersRes.data?.defaulters?.length ?? 0,
-        pendingApprovals:   pendingRes.data?.count ?? null,
-        openComplaints:     openCount,
-        criticalComplaints: critCount,
-        unseenAnomalies:    anomaliesRes.data?.unseen_count ?? anomaliesRes.data?.total ?? 0,
-        gateWindow:         windowRes.data ?? null,
-      })
-      setRecentAnomalies(anomaliesRes.data?.flags?.slice(0, 4) ?? [])
-      setRecentComplaints(recentComplaintsRes.data?.complaints?.slice(0, 3) ?? [])
-      setHeraldSummary(heraldSummaryRes.data?.summary ?? null)
-    } catch {
-      // keep state
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [])
-
-  useEffect(() => { loadData(false) }, [loadData])
-
   const handleRunHerald = async () => {
-    setRefreshing(true)
     try {
       await wardenApi.runHerald()
-      await loadData(true)
+      await refreshAnomalies()
+      // Force fresh herald generation after run
+      await fetchHerald(true)
     } catch {
-      setRefreshing(false)
+      // ignore
     }
   }
 
@@ -157,7 +115,7 @@ export default function WardenDashboard() {
             RUN HERALD AUDIT
           </button>
           <button
-            onClick={() => loadData(true)}
+            onClick={refresh}
             disabled={refreshing}
             className="btn-ghost text-xs"
             title="Refresh current metrics"
@@ -261,7 +219,7 @@ export default function WardenDashboard() {
 
       {/* ── Operational Briefing & Curfew Parameters ────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Curfew Parameters Card */}
         <div className="bg-[#0e0e0e] border border-[#242424] p-5 flex flex-col justify-between">
           <div>
@@ -323,7 +281,7 @@ export default function WardenDashboard() {
           </Link>
         </div>
 
-        {/* HERALD Autonomous Summary */}
+        {/* HERALD Autonomous Summary — loads independently, non-blocking */}
         <div className="lg:col-span-2 bg-[#0e0e0e] border border-[#242424] p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-[#202020] mb-3">
@@ -337,7 +295,13 @@ export default function WardenDashboard() {
             </div>
 
             <div className="p-4 bg-[#111111] border border-[#222222] min-h-[90px] flex items-center font-sans">
-              {heraldSummary ? (
+              {heraldLoading ? (
+                // Herald-only inline spinner — rest of page already visible
+                <div className="flex items-center gap-2 text-[#777777] text-xs font-mono">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>SYNTHESISING CROSS-AGENT INTELLIGENCE DIGEST…</span>
+                </div>
+              ) : heraldSummary ? (
                 <p className="text-xs text-[#cccccc] leading-relaxed">
                   {heraldSummary}
                 </p>
@@ -362,7 +326,7 @@ export default function WardenDashboard() {
 
       {/* ── Split Table Feeds: Recent Anomalies & Critical Complaints ─────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Recent Anomalies Panel */}
         <div className="bg-[#0e0e0e] border border-[#242424] p-5">
           <div className="flex items-center justify-between pb-3 border-b border-[#202020] mb-3">
@@ -502,7 +466,7 @@ export default function WardenDashboard() {
         onClose={() => setWindowModalOpen(false)}
         initialWindow={stats.gateWindow}
         onSaved={(newWin) => {
-          setStats((prev) => ({ ...prev, gateWindow: newWin }))
+          setGateWindow(newWin)
         }}
       />
     </div>

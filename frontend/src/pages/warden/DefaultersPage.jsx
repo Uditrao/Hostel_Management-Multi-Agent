@@ -4,12 +4,13 @@
  * Warden views the daily gate defaulters list from SENTINEL.
  * Supports date picker + on-demand trigger check.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Users, Calendar, RefreshCw, Search,
   AlertTriangle, Hash, Home, CheckCircle2, Zap
 } from 'lucide-react'
 import { wardenApi } from '../../services/api'
+import { useWardenContext } from '../../context/WardenContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -35,53 +36,57 @@ const getEffectiveDateStr = () => {
 }
 
 export default function DefaultersPage() {
-  const [loading,    setLoading]    = useState(true)
+  const { data, loading: ctxLoading, refreshing: ctxRefreshing, refresh } = useWardenContext()
+
   const [refreshing, setRefreshing] = useState(false)
   const [running,    setRunning]    = useState(false)
   const [targetDate, setTargetDate] = useState(getEffectiveDateStr())
-  const [defaulters, setDefaulters] = useState([])
-  const [total,      setTotal]      = useState(0)
+  // Local override: when warden picks a custom date, store results here
+  const [localDefaulters, setLocalDefaulters] = useState(null)
+  const [localTotal,      setLocalTotal]      = useState(null)
   const [search,     setSearch]     = useState('')
   const [error,      setError]      = useState(null)
 
-  const loadDefaulters = useCallback(async (silent = false, date = targetDate) => {
-    if (!silent) setLoading(true)
-    else setRefreshing(true)
+  // Use local results if warden picked a custom date, else use Context cache
+  const defaulters = localDefaulters ?? data.defaulters ?? []
+  const total      = localTotal ?? 0
+
+  const loadDefaulters = useCallback(async (date) => {
+    setRefreshing(true)
     setError(null)
     try {
       const res = await wardenApi.getDefaulters(date)
-      setDefaulters(res.data?.defaulters ?? [])
-      setTotal(res.data?.total_enrolled ?? 0)
-      if (res.data?.date && !date) {
-        setTargetDate(res.data.date)
-      }
+      setLocalDefaulters(res.data?.defaulters ?? [])
+      setLocalTotal(res.data?.total_enrolled ?? 0)
     } catch (err) {
       setError(err?.detail ?? 'Failed to load defaulters.')
     } finally {
-      setLoading(false)
       setRefreshing(false)
     }
-  }, [targetDate])
-
-  useEffect(() => { loadDefaulters(false) }, [])
+  }, [])
 
   const handleDateChange = (e) => {
     const d = e.target.value
     setTargetDate(d)
-    loadDefaulters(true, d)
+    // Date-specific query: always fetch fresh from API (not cached)
+    loadDefaulters(d)
   }
 
   const handleTriggerCheck = async () => {
     setRunning(true)
     try {
       await wardenApi.triggerDefaultersCheck()
-      await loadDefaulters(true)
+      // Re-fetch for current date, then update global context too
+      await loadDefaulters(targetDate)
+      await refresh()
     } catch {
       // ignore
     } finally {
       setRunning(false)
     }
   }
+
+  const isLoading = ctxLoading && !localDefaulters
 
   const filtered = defaulters.filter((s) =>
     !search ||
@@ -94,7 +99,7 @@ export default function DefaultersPage() {
     ? Math.round(((total - defaulters.length) / total) * 100)
     : null
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
@@ -128,11 +133,11 @@ export default function DefaultersPage() {
             {running ? 'Running…' : 'Run Check'}
           </button>
           <button
-            onClick={() => loadDefaulters(true)}
-            disabled={refreshing}
+            onClick={() => { loadDefaulters(targetDate); refresh(); }}
+            disabled={running || refreshing || ctxRefreshing}
             className="btn-ghost flex items-center gap-2 text-sm"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${(refreshing || ctxRefreshing) ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
