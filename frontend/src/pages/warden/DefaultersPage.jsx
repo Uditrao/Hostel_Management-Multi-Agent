@@ -14,6 +14,14 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const todayStr = () => {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const getEffectiveDateStr = () => {
   const now = new Date()
   // Before 06:00 AM, default to the curfew cycle that concluded last night
@@ -234,7 +242,7 @@ export default function DefaultersPage() {
               <tbody>
                 {filtered.map((s, i) => (
                   <tr
-                    key={s.id}
+                    key={s.student_id || s.id || i}
                     className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
                   >
                     <td className="px-4 py-3 text-xs text-slate-500">{i + 1}</td>
